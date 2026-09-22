@@ -133,19 +133,21 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
         ctx.shadowBlur = 8;
         ctx.fillText(decal.customText || decal.name, 0, 0);
       } else if (def?.pathSvg) {
-        // Draw SVG path graphic
+        // Draw SVG path graphic (centered at 0,0 origin)
         const path2d = new Path2D(def.pathSvg);
         ctx.fillStyle = decal.color;
         ctx.shadowColor = decal.color;
         ctx.shadowBlur = 4;
-
-        // Center SVG paths (assuming 1024 viewBox base)
-        ctx.translate(-512, -512);
         ctx.fill(path2d);
       }
 
       ctx.restore();
     });
+
+    // Send CLEAN texture to 3D Three.js material & Exports BEFORE drawing overlays
+    if (onCanvasRender) {
+      onCanvasRender(canvas);
+    }
 
     // 5. DRAW VEHICLE UV PANEL OUTLINE GUIDES (If enabled)
     if (showGuides) {
@@ -213,11 +215,6 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       ctx.fill();
 
       ctx.restore();
-    }
-
-    // Trigger 3D texture update callback
-    if (onCanvasRender) {
-      onCanvasRender(canvas);
     }
   }, [liveryState, selectedDecalId, showGuides, onCanvasRender]);
 

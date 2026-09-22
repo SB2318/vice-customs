@@ -34,7 +34,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   // Download 3D Studio Screenshot
   const handleDownload3D = () => {
     audioEngine.playClickSFX();
-    const threeCanvas = (document.getElementById('three-webgl-canvas') || document.querySelector('#three-webgl-canvas canvas')) as HTMLCanvasElement;
+    const threeCanvas = document.querySelector('#three-webgl-canvas canvas') as HTMLCanvasElement;
     if (!threeCanvas) return;
     const link = document.createElement('a');
     link.download = `ViceCustoms_${liveryState.vehicle}_3D_Studio_Render.png`;
