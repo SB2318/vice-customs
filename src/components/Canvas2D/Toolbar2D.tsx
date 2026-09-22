@@ -14,9 +14,14 @@ interface Toolbar2DProps {
   onRemoveDecal: (id: string) => void;
 }
 
-const PALETTE_COLORS = [
+const PRIMARY_PALETTE = [
   '#ff007f', '#00f0ff', '#39ff14', '#ffea00', '#9d00ff', '#ff5500',
-  '#0b0b12', '#ffffff', '#111111', '#888888', '#ff0000', '#0a2342'
+  '#ffffff', '#0b0b12', '#ff0033', '#0a2342', '#888888', '#d4af37'
+];
+
+const SECONDARY_PALETTE = [
+  '#ffffff', '#111111', '#00f0ff', '#ffea00', '#ff007f', '#39ff14',
+  '#ff4500', '#6b21a8', '#e0e0e0', '#dc2626', '#0284c7', '#d97706'
 ];
 
 export const Toolbar2D: React.FC<Toolbar2DProps> = ({
@@ -187,68 +192,85 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
       <div className="flex-1 p-4 overflow-y-auto space-y-5 custom-scrollbar">
         {/* --- TAB 1: PAINT & FINISH --- */}
         {activeTab === 'paint' && (
-          <div className="space-y-6">
-            <div>
-              <label className="text-xs font-vice text-gray-300 block mb-2 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-vice-pink" /> PRIMARY BODY COAT
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {PALETTE_COLORS.map(c => (
+          <div className="space-y-4">
+            {/* Primary Body Coat */}
+            <div className="bg-[#141424] p-3 rounded-xl border border-vice-border space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-vice text-gray-300 flex items-center gap-1.5 font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-vice-pink shadow-neon-pink" /> PRIMARY BODY COAT
+                </label>
+                <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded-lg border border-gray-700">
+                  <input
+                    type="color"
+                    value={liveryState.primaryColor}
+                    onChange={(e) => onUpdateState({ primaryColor: e.target.value })}
+                    className="w-5 h-5 bg-transparent cursor-pointer rounded border-0"
+                    title="Choose custom color"
+                  />
+                  <span className="text-[10px] font-mono text-gray-300">{liveryState.primaryColor}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5 pt-1">
+                {PRIMARY_PALETTE.map(c => (
                   <button
                     key={c}
                     onClick={() => onUpdateState({ primaryColor: c })}
                     style={{ backgroundColor: c }}
-                    className={`h-9 rounded-lg border-2 transition-transform hover:scale-110 ${
-                      liveryState.primaryColor === c ? 'border-white scale-105 ring-2 ring-vice-pink' : 'border-transparent'
+                    className={`h-7 rounded-lg border transition-transform hover:scale-110 ${
+                      liveryState.primaryColor === c ? 'border-white scale-105 ring-2 ring-vice-pink shadow-neon-pink' : 'border-black/40'
                     }`}
                   />
                 ))}
               </div>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-gray-400">Custom Hex:</span>
-                <input
-                  type="color"
-                  value={liveryState.primaryColor}
-                  onChange={(e) => onUpdateState({ primaryColor: e.target.value })}
-                  className="w-10 h-8 bg-transparent cursor-pointer rounded border border-gray-700"
-                />
-                <span className="text-xs font-mono text-gray-300">{liveryState.primaryColor}</span>
-              </div>
             </div>
 
-            <div>
-              <label className="text-xs font-vice text-gray-300 block mb-2 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-vice-cyan" /> DUAL-TONE SECONDARY ACCENT
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {PALETTE_COLORS.map(c => (
+            {/* Dual-Tone Secondary Accent */}
+            <div className="bg-[#141424] p-3 rounded-xl border border-vice-border space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-vice text-gray-300 flex items-center gap-1.5 font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-vice-cyan shadow-neon-cyan" /> DUAL-TONE SECONDARY ACCENT
+                </label>
+                <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded-lg border border-gray-700">
+                  <input
+                    type="color"
+                    value={liveryState.secondaryColor}
+                    onChange={(e) => onUpdateState({ secondaryColor: e.target.value })}
+                    className="w-5 h-5 bg-transparent cursor-pointer rounded border-0"
+                    title="Choose custom accent color"
+                  />
+                  <span className="text-[10px] font-mono text-gray-300">{liveryState.secondaryColor}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5 pt-1">
+                {SECONDARY_PALETTE.map(c => (
                   <button
                     key={c}
                     onClick={() => onUpdateState({ secondaryColor: c })}
                     style={{ backgroundColor: c }}
-                    className={`h-9 rounded-lg border-2 transition-transform hover:scale-110 ${
-                      liveryState.secondaryColor === c ? 'border-white scale-105 ring-2 ring-vice-cyan' : 'border-transparent'
+                    className={`h-7 rounded-lg border transition-transform hover:scale-110 ${
+                      liveryState.secondaryColor === c ? 'border-white scale-105 ring-2 ring-vice-cyan shadow-neon-cyan' : 'border-black/40'
                     }`}
                   />
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-vice text-gray-300 block mb-2">FINISH MATERIAL Patina</label>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Finish Material */}
+            <div className="bg-[#141424] p-3 rounded-xl border border-vice-border space-y-2">
+              <label className="text-xs font-vice text-gray-300 block font-bold">FINISH MATERIAL PATINA</label>
+              <div className="grid grid-cols-2 gap-1.5">
                 {(['gloss', 'matte', 'metallic', 'pearlescent', 'chameleon', 'carbon', 'rust'] as PaintFinish[]).map(finish => (
                   <button
                     key={finish}
                     onClick={() => onUpdateState({ finish })}
-                    className={`py-2 px-3 rounded-lg text-xs font-vice capitalize border transition-all text-left flex items-center justify-between ${
+                    className={`py-1.5 px-2.5 rounded-lg text-[11px] font-vice capitalize border transition-all text-left flex items-center justify-between ${
                       liveryState.finish === finish
                         ? 'bg-vice-card border-vice-pink text-vice-pink shadow-neon-pink'
                         : 'bg-[#181828] border-vice-border text-gray-400 hover:text-white'
                     }`}
                   >
                     <span>{finish}</span>
-                    {liveryState.finish === finish && <Sparkles size={14} className="text-vice-pink animate-spin" />}
+                    {liveryState.finish === finish && <Sparkles size={12} className="text-vice-pink animate-spin" />}
                   </button>
                 ))}
               </div>
@@ -429,18 +451,30 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
             </div>
 
             {/* Rim Color Selector */}
-            <div>
-              <label className="text-xs font-vice text-gray-300 block mb-2 flex items-center gap-2">
-                <Disc size={16} className="text-vice-yellow" /> METALLIC RIM COLOR TUNING
-              </label>
-              <div className="grid grid-cols-6 gap-2">
+            <div className="bg-[#141424] p-3 rounded-xl border border-vice-border space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-vice text-gray-300 flex items-center gap-1.5 font-bold">
+                  <Disc size={15} className="text-vice-yellow" /> METALLIC RIM COLOR TUNING
+                </label>
+                <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded-lg border border-gray-700">
+                  <input
+                    type="color"
+                    value={liveryState.rimColor || '#e5e5e5'}
+                    onChange={(e) => onUpdateState({ rimColor: e.target.value })}
+                    className="w-5 h-5 bg-transparent cursor-pointer rounded border-0"
+                    title="Choose custom rim color"
+                  />
+                  <span className="text-[10px] font-mono text-gray-300">{liveryState.rimColor || '#e5e5e5'}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5 pt-1">
                 {['#e5e5e5', '#ffea00', '#00f0ff', '#ff007f', '#39ff14', '#111111'].map(c => (
                   <button
                     key={c}
                     onClick={() => onUpdateState({ rimColor: c })}
                     style={{ backgroundColor: c }}
-                    className={`h-9 rounded-lg border-2 transition-transform hover:scale-110 ${
-                      liveryState.rimColor === c ? 'border-white scale-105 ring-2 ring-vice-yellow' : 'border-transparent'
+                    className={`h-7 rounded-lg border transition-transform hover:scale-110 ${
+                      liveryState.rimColor === c ? 'border-white scale-105 ring-2 ring-vice-yellow shadow-neon-yellow' : 'border-black/40'
                     }`}
                   />
                 ))}
@@ -448,14 +482,14 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
             </div>
 
             {/* Window Tint Selector */}
-            <div>
-              <label className="text-xs font-vice text-gray-300 block mb-2">WINDOW TINT FILM</label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="bg-[#141424] p-3 rounded-xl border border-vice-border space-y-2">
+              <label className="text-xs font-vice text-gray-300 block font-bold">WINDOW TINT FILM</label>
+              <div className="grid grid-cols-2 gap-1.5">
                 {(['clear', 'dark_limo', 'pink_neon', 'cyan_neon'] as WindowTint[]).map(tint => (
                   <button
                     key={tint}
                     onClick={() => onUpdateState({ windowTint: tint })}
-                    className={`py-2 px-3 rounded-lg text-xs font-vice uppercase border transition-all text-left flex items-center justify-between ${
+                    className={`py-1.5 px-2.5 rounded-lg text-[11px] font-vice uppercase border transition-all text-left flex items-center justify-between ${
                       liveryState.windowTint === tint
                         ? 'bg-vice-card border-vice-cyan text-vice-cyan shadow-neon-cyan'
                         : 'bg-[#181828] border-vice-border text-gray-400 hover:text-white'
@@ -483,13 +517,16 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="text-[10px] text-gray-400">COLOR TINT</label>
-                    <input
-                      type="color"
-                      value={selectedDecal.color}
-                      onChange={(e) => onUpdateDecal(selectedDecal.id, { color: e.target.value })}
-                      className="w-full h-8 bg-transparent cursor-pointer rounded"
-                    />
+                    <label className="text-[10px] text-gray-400 block mb-1">COLOR TINT</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={selectedDecal.color}
+                        onChange={(e) => onUpdateDecal(selectedDecal.id, { color: e.target.value })}
+                        className="w-7 h-7 bg-transparent cursor-pointer rounded border border-gray-700"
+                      />
+                      <span className="text-[10px] font-mono text-gray-300">{selectedDecal.color}</span>
+                    </div>
                   </div>
 
                   <div>
@@ -501,8 +538,25 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
                       step="0.05"
                       value={selectedDecal.opacity}
                       onChange={(e) => onUpdateDecal(selectedDecal.id, { opacity: parseFloat(e.target.value) })}
-                      className="w-full accent-vice-pink"
+                      className="w-full accent-vice-pink mt-1.5"
                     />
+                  </div>
+                </div>
+
+                {/* Quick Decal Color Palette */}
+                <div>
+                  <label className="text-[10px] text-gray-400 block mb-1">QUICK TINT PRESETS</label>
+                  <div className="grid grid-cols-8 gap-1">
+                    {PRIMARY_PALETTE.slice(0, 8).map(c => (
+                      <button
+                        key={c}
+                        onClick={() => onUpdateDecal(selectedDecal.id, { color: c })}
+                        style={{ backgroundColor: c }}
+                        className={`h-5 rounded border transition-transform hover:scale-110 ${
+                          selectedDecal.color === c ? 'border-white ring-1 ring-vice-pink' : 'border-black/30'
+                        }`}
+                      />
+                    ))}
                   </div>
                 </div>
 

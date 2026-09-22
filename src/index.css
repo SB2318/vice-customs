@@ -38,3 +38,32 @@
 .animate-fadeIn {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ── Mobile touch optimizations ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth momentum scrolling on iOS */
+.overflow-x-auto,
+.overflow-y-auto,
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection on buttons/interactive elements */
+button, [role="button"] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure range inputs are usable on mobile */
+input[type="range"] {
+  touch-action: pan-x;
+}
+
+/* Full-height viewport fix for mobile browsers (address bar aware) */
+html, body, #root {
+  height: 100%;
+}

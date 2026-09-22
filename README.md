@@ -38,16 +38,30 @@ Players design custom vehicle paint wraps on a 2D canvas editor (powered by **Un
 - **Decals Studio** — Racing stripes, retro hot-rod flames, cyberpunk neon wings, spray stencils, GTA-style sponsor logos (Pegassi, Grotti, Sprunk, eCola), bullet holes & scratch damage marks
 - **Text & License Plates** — Custom typography (Orbitron, Impact, 8-Bit Arcade), Vice City license plate designer (Sunset Pink, Blue/Yellow, Outlaw Black & Gold)
 - **1-Click Mirror** — Mirror any decal to the opposite side of the vehicle instantly
+- **Multi-Touch Gestures** — 2-finger pinch to scale, 2-finger rotate, and drag to position decals on mobile & tablets
+- **On-Canvas Floating HUD** — Zoom In/Out, Reset View, UV Guide toggle, and instant Undo/Redo controls
+
+### ⚡ Undo / Redo History Engine
+- 40-step non-destructive history stack for all paints, decals, materials, and tuning
+- Full keyboard shortcut support: `Ctrl+Z` / `Cmd+Z` (Undo), `Ctrl+Y` / `Cmd+Shift+Z` (Redo)
+- Dedicated Header & Canvas HUD buttons
+
+### 🌐 Save, Load, Cloud Share & JSON System
+- **1-Click Shareable Link** — Encodes full livery state into compact URL hash (`#share=...`) to share exact builds across devices
+- **JSON Export / Import** — Download `.json` livery config files or upload existing configs
+- **LocalStorage Multi-Slot Garage** — Store named custom vehicle builds in browser storage with timestamps
 
 ### 🖌️ Unlayer React Image Editor Integration
 - Launched via the **🖌️ UNLAYER EDITOR** button in the header
 - Full image editing suite: crop, filters, adjustments, shapes, freehand draw, stickers, annotations
 - **Save inside Unlayer** → artwork is applied directly onto the live 3D vehicle texture in real time
 
-### 🚗 Live 3D Garage Renderer (Three.js / React Three Fiber)
+### 🚗 Live 3D Garage Renderer (Three.js / React Three Fiber / HDRI)
 - **4 vehicle models**: Vice Infernus, Banshee GTS, Dominator Muscle, Street Demon Dirtbike
-- Real-time `CanvasTexture` pipeline — every 2D paint stroke updates the 3D skin instantly
-- **Camera presets**: 3/4 Front, Side Profile, Rear Bumper, Cinematic, 360° Turntable spin
+- **`MeshPhysicalMaterial`** — Photorealistic clearcoat, metallic gloss, iridescence (for chameleon & pearlescent), and physical glass windows
+- **Drei HDRI Environment Map** — Studio reflections on car paint and rims
+- **Graphics Quality Toggle** — `HIGH` (2x DPR + shadows + reflections), `MED` (1.5x DPR), `LOW` (1x DPR for mobile battery)
+- **Smooth Camera Presets** — Lerped transitions between `3/4 Front`, `Front`, `Side`, `Rear`, `Top`, `Rims/Wheel`, `Spin 🔄`, and `Cinematic 🎬`
 - **Neon Underglow** — animated cyan/pink pulsing light bars
 - **3D Exhaust Flames** — cone mesh + dynamic point lights burst from exhaust pipes on rev
 - **Rainy Vice City Mode** — GPU particle rain system, wet reflective floor, storm atmosphere

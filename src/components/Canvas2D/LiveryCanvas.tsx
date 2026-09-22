@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { LiveryState, DecalLayer } from '../../types';
 import { DECAL_LIBRARY } from '../../utils/decalLibrary';
+import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Eye, EyeOff } from 'lucide-react';
 
 interface LiveryCanvasProps {
   liveryState: LiveryState;
@@ -9,6 +10,11 @@ interface LiveryCanvasProps {
   onUpdateDecal: (id: string, updates: Partial<DecalLayer>) => void;
   onCanvasRender?: (canvas: HTMLCanvasElement) => void;
   showGuides?: boolean;
+  onToggleGuides?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
@@ -17,15 +23,35 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
   onSelectDecal,
   onUpdateDecal,
   onCanvasRender,
-  showGuides = true
+  showGuides = true,
+  onToggleGuides,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'move' | 'rotate' | 'scale'>('move');
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [decalStartPos, setDecalStartPos] = useState<{ x: number; y: number; scaleX: number; scaleY: number; rotation: number }>({
     x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0
   });
+
+  // Multi-touch tracking for pinch-to-scale & two-finger rotate
+  const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStart = useRef<{ dist: number; angle: number; scaleX: number; scaleY: number; rotation: number }>({
+    dist: 0,
+    angle: 0,
+    scaleX: 1,
+    scaleY: 1,
+    rotation: 0
+  });
+
+  const [canvasZoom, setCanvasZoom] = useState(1);
+  const [localShowGuides, setLocalShowGuides] = useState(showGuides);
 
   const selectedDecal = liveryState.decals.find(d => d.id === selectedDecalId);
 
@@ -150,7 +176,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     }
 
     // 5. DRAW VEHICLE UV PANEL OUTLINE GUIDES (If enabled)
-    if (showGuides) {
+    if (localShowGuides) {
       ctx.save();
       ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
       ctx.lineWidth = 2;
@@ -216,20 +242,44 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
 
       ctx.restore();
     }
-  }, [liveryState, selectedDecalId, showGuides, onCanvasRender]);
+  }, [liveryState, selectedDecalId, localShowGuides, onCanvasRender]);
 
   useEffect(() => {
     drawCanvas();
   }, [drawCanvas]);
 
-  // --- MOUSE / TOUCH INTERACTION FOR DECAL DRAGGING & TRANSFORMS ---
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // --- MULTI-TOUCH & POINTER INTERACTION FOR DECAL DRAGGING & PINCH TRANSFORMS ---
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
     const rect = canvas.getBoundingClientRect();
     const scale = 1024 / rect.width;
     const clickX = (e.clientX - rect.left) * scale;
     const clickY = (e.clientY - rect.top) * scale;
+
+    activePointers.current.set(e.pointerId, { x: clickX, y: clickY });
+
+    // Handle 2-Finger Pinch Start
+    if (activePointers.current.size === 2 && selectedDecal) {
+      const pts = Array.from(activePointers.current.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const angle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+      pinchStart.current = {
+        dist,
+        angle,
+        scaleX: selectedDecal.scaleX,
+        scaleY: selectedDecal.scaleY,
+        rotation: selectedDecal.rotation
+      };
+      setDragMode('scale');
+      return;
+    }
 
     if (selectedDecal) {
       const handleW = 140 * selectedDecal.scaleX;
@@ -240,7 +290,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       const rotKnobY = selectedDecal.y - (handleH / 2 + 30);
       const distRot = Math.hypot(clickX - rotKnobX, clickY - rotKnobY);
 
-      if (distRot < 25) {
+      if (distRot < 35) {
         setIsDragging(true);
         setDragMode('rotate');
         setDragStart({ x: clickX, y: clickY });
@@ -259,7 +309,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     const sorted = [...liveryState.decals].sort((a, b) => b.zIndex - a.zIndex);
     const hit = sorted.find(d => {
       const dist = Math.hypot(clickX - d.x, clickY - d.y);
-      return dist < 80 * Math.max(d.scaleX, d.scaleY);
+      return dist < 90 * Math.max(d.scaleX, d.scaleY);
     });
 
     if (hit) {
@@ -279,8 +329,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDragging || !selectedDecalId || !selectedDecal) return;
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -288,6 +337,29 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     const scale = 1024 / rect.width;
     const currX = (e.clientX - rect.left) * scale;
     const currY = (e.clientY - rect.top) * scale;
+
+    if (activePointers.current.has(e.pointerId)) {
+      activePointers.current.set(e.pointerId, { x: currX, y: currY });
+    }
+
+    // Two-finger Pinch & Rotate
+    if (activePointers.current.size === 2 && selectedDecalId && selectedDecal) {
+      const pts = Array.from(activePointers.current.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const currentAngle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+
+      const scaleFactor = Math.max(0.2, Math.min(3.0, currentDist / pinchStart.current.dist));
+      const angleDiff = ((currentAngle - pinchStart.current.angle) * 180) / Math.PI;
+
+      onUpdateDecal(selectedDecalId, {
+        scaleX: Number((pinchStart.current.scaleX * scaleFactor).toFixed(2)),
+        scaleY: Number((pinchStart.current.scaleY * scaleFactor).toFixed(2)),
+        rotation: Math.round((pinchStart.current.rotation + angleDiff) % 360)
+      });
+      return;
+    }
+
+    if (!isDragging || !selectedDecalId || !selectedDecal) return;
 
     const dx = currX - dragStart.x;
     const dy = currY - dragStart.y;
@@ -305,27 +377,115 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    activePointers.current.delete(e.pointerId);
+    if (activePointers.current.size === 0) {
+      setIsDragging(false);
+    }
+    const canvas = canvasRef.current;
+    if (canvas) {
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0d0d18] p-3 rounded-xl border border-vice-border shadow-2xl">
-      <div className="relative w-full max-w-[560px] aspect-square rounded-lg overflow-hidden border-2 border-vice-pink/40 shadow-neon-pink group">
+    <div
+      ref={containerRef}
+      className="relative w-full h-full flex flex-col items-center justify-center bg-[#0d0d18] p-2 sm:p-3 rounded-xl border border-vice-border shadow-2xl overflow-hidden"
+    >
+      {/* FLOATING HUD CONTROLS OVER CANVAS */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md p-1.5 rounded-xl border border-vice-border shadow-lg">
+        {onUndo && (
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            className={`p-1.5 rounded-lg text-xs transition-all ${
+              canUndo ? 'text-vice-pink hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
+            }`}
+          >
+            <Undo2 size={16} />
+          </button>
+        )}
+
+        {onRedo && (
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y)"
+            className={`p-1.5 rounded-lg text-xs transition-all ${
+              canRedo ? 'text-vice-cyan hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
+            }`}
+          >
+            <Redo2 size={16} />
+          </button>
+        )}
+
+        <div className="w-[1px] h-4 bg-gray-700 mx-0.5" />
+
+        <button
+          onClick={() => setCanvasZoom(prev => Math.min(2.0, prev + 0.15))}
+          title="Zoom In"
+          className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+        >
+          <ZoomIn size={16} />
+        </button>
+
+        <button
+          onClick={() => setCanvasZoom(prev => Math.max(0.7, prev - 0.15))}
+          title="Zoom Out"
+          className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+        >
+          <ZoomOut size={16} />
+        </button>
+
+        <button
+          onClick={() => setCanvasZoom(1)}
+          title="Reset Zoom"
+          className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+        >
+          <RotateCcw size={15} />
+        </button>
+
+        <div className="w-[1px] h-4 bg-gray-700 mx-0.5" />
+
+        <button
+          onClick={() => {
+            setLocalShowGuides(!localShowGuides);
+            if (onToggleGuides) onToggleGuides();
+          }}
+          title={localShowGuides ? 'Hide UV Guides' : 'Show UV Guides'}
+          className={`p-1.5 rounded-lg transition-all ${
+            localShowGuides ? 'text-vice-cyan hover:bg-vice-cyan/20' : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          {localShowGuides ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
+      </div>
+
+      {/* CANVAS CONTAINER WITH SMOOTH TRANSFORM */}
+      <div
+        style={{ transform: `scale(${canvasZoom})`, transition: 'transform 0.15s ease-out' }}
+        className="relative w-full max-w-[560px] aspect-square rounded-lg overflow-hidden border-2 border-vice-pink/40 shadow-neon-pink group"
+      >
         <canvas
           ref={canvasRef}
           width={1024}
           height={1024}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           className="w-full h-full cursor-crosshair touch-none bg-black"
         />
 
         {/* Dynamic Scanline & Grid HUD Overlay */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.25)_51%)] bg-[length:100%_4px]" />
-        
+
         <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1 rounded text-xs font-vice text-vice-cyan border border-vice-cyan/30 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-vice-cyan animate-ping" />
           2D UV TEXTURE CANVAS (1024x1024)
@@ -333,7 +493,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       </div>
 
       <div className="mt-3 text-xs text-gray-400 font-sans flex items-center justify-between w-full max-w-[560px] px-1">
-        <span>💡 Drag decals to reposition • Use handles to scale & rotate</span>
+        <span>💡 Drag decal to move • Pinch / 2 fingers to scale &amp; rotate</span>
         <span className="text-vice-pink font-semibold">Live 3D Sync Active</span>
       </div>
     </div>

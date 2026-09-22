@@ -78,9 +78,21 @@ class ViceAudioEngine {
     this.engineIdleOsc2.start();
   }
 
-  public revEngine(durationMs: number = 2000) {
+  private revTimeout: any = null;
+
+  public isEngineActive(): boolean {
+    return this.isEngineRunning;
+  }
+
+  public revEngine(durationMs: number = 2200, onComplete?: () => void) {
     this.initCtx();
     if (!this.ctx) return;
+
+    // Clear previous rev timeout if re-triggered
+    if (this.revTimeout) {
+      clearTimeout(this.revTimeout);
+      this.revTimeout = null;
+    }
 
     if (!this.isEngineRunning) {
       this.startEngineAudio();
@@ -90,7 +102,7 @@ class ViceAudioEngine {
     const revTime = durationMs / 1000;
 
     if (this.engineIdleOsc1 && this.engineIdleOsc2 && this.engineGain) {
-      // RPM curve up then down
+      // RPM curve up then ramp down to silent
       this.engineIdleOsc1.frequency.cancelScheduledValues(now);
       this.engineIdleOsc2.frequency.cancelScheduledValues(now);
       this.engineGain.gain.cancelScheduledValues(now);
@@ -98,15 +110,16 @@ class ViceAudioEngine {
       // Pitch up (Rev scream)
       this.engineIdleOsc1.frequency.setValueAtTime(45, now);
       this.engineIdleOsc1.frequency.exponentialRampToValueAtTime(180, now + revTime * 0.4);
-      this.engineIdleOsc1.frequency.exponentialRampToValueAtTime(50, now + revTime);
+      this.engineIdleOsc1.frequency.exponentialRampToValueAtTime(35, now + revTime * 0.95);
 
       this.engineIdleOsc2.frequency.setValueAtTime(22, now);
       this.engineIdleOsc2.frequency.exponentialRampToValueAtTime(90, now + revTime * 0.4);
-      this.engineIdleOsc2.frequency.exponentialRampToValueAtTime(22, now + revTime);
+      this.engineIdleOsc2.frequency.exponentialRampToValueAtTime(18, now + revTime * 0.95);
 
-      this.engineGain.gain.setValueAtTime(0.2, now);
-      this.engineGain.gain.linearRampToValueAtTime(0.5, now + revTime * 0.4);
-      this.engineGain.gain.linearRampToValueAtTime(0.2, now + revTime);
+      this.engineGain.gain.setValueAtTime(0.25, now);
+      this.engineGain.gain.linearRampToValueAtTime(0.55, now + revTime * 0.4);
+      this.engineGain.gain.linearRampToValueAtTime(0.15, now + revTime * 0.75);
+      this.engineGain.gain.exponentialRampToValueAtTime(0.0001, now + revTime);
 
       // Turbo Spool Whistle
       const turboOsc = this.ctx.createOscillator();
@@ -117,7 +130,7 @@ class ViceAudioEngine {
       
       turboGain.gain.setValueAtTime(0.01, now);
       turboGain.gain.linearRampToValueAtTime(0.12, now + revTime * 0.4);
-      turboGain.gain.linearRampToValueAtTime(0, now + revTime * 0.5); // Blow-off valve dump!
+      turboGain.gain.linearRampToValueAtTime(0, now + revTime * 0.5);
 
       turboOsc.connect(turboGain);
       turboGain.connect(this.ctx.destination);
@@ -129,7 +142,21 @@ class ViceAudioEngine {
         this.playBlowOffValve();
         this.triggerExhaustPop();
       }, revTime * 400);
+
+      // Auto stop engine audio after revTime completes
+      this.revTimeout = setTimeout(() => {
+        this.stopEngineAudio();
+        if (onComplete) onComplete();
+      }, durationMs);
     }
+  }
+
+  public stopEngine() {
+    if (this.revTimeout) {
+      clearTimeout(this.revTimeout);
+      this.revTimeout = null;
+    }
+    this.stopEngineAudio();
   }
 
   private playBlowOffValve() {
@@ -163,7 +190,6 @@ class ViceAudioEngine {
   private triggerExhaustPop() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    // Pop bang noise
     const popOsc = this.ctx.createOscillator();
     const popGain = this.ctx.createGain();
     popOsc.type = 'triangle';
@@ -179,15 +205,21 @@ class ViceAudioEngine {
     popOsc.stop(now + 0.08);
   }
 
-  private stopEngineAudio() {
+  public stopEngineAudio() {
     this.isEngineRunning = false;
     if (this.engineIdleOsc1) {
-      this.engineIdleOsc1.stop();
-      this.engineIdleOsc1.disconnect();
+      try {
+        this.engineIdleOsc1.stop();
+        this.engineIdleOsc1.disconnect();
+      } catch {}
+      this.engineIdleOsc1 = null;
     }
     if (this.engineIdleOsc2) {
-      this.engineIdleOsc2.stop();
-      this.engineIdleOsc2.disconnect();
+      try {
+        this.engineIdleOsc2.stop();
+        this.engineIdleOsc2.disconnect();
+      } catch {}
+      this.engineIdleOsc2 = null;
     }
   }
 

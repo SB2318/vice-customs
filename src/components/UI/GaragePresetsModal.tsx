@@ -26,8 +26,8 @@ export const GaragePresetsModal: React.FC<GaragePresetsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-[#0f0f1b] border-2 border-vice-pink rounded-2xl shadow-neon-pink p-6 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar bg-[#0f0f1b] border-2 border-vice-pink rounded-2xl shadow-neon-pink p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-vice-border">
           <div className="flex items-center gap-3">

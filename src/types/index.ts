@@ -64,7 +64,9 @@ export interface LiveryState {
   isExhaustFlamesActive: boolean;
 }
 
-export type CameraPreset = 'front_34' | 'side' | 'rear' | 'top' | 'door_closeup' | 'turntable' | 'cinematic';
+export type GraphicsQuality = 'low' | 'medium' | 'high';
+
+export type CameraPreset = 'front_34' | 'front' | 'side' | 'rear' | 'top' | 'wheel' | 'door_closeup' | 'turntable' | 'cinematic';
 
 export type ViewMode = 'split' | '2d_only' | '3d_only';
 

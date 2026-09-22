@@ -19,6 +19,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
     const tex = new THREE.CanvasTexture(canvasElement);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
     tex.needsUpdate = true;
     return tex;
   }, [canvasElement]);
@@ -40,23 +41,82 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
     }
   });
 
-  // Calculate body material physical parameters based on Paint Finish
+  // Calculate advanced MeshPhysicalMaterial parameters based on Paint Finish
   const finishParams = useMemo(() => {
     switch (liveryState.finish) {
       case 'matte':
-        return { roughness: 0.8, metalness: 0.05, clearcoat: 0 };
+        return {
+          roughness: 0.82,
+          metalness: 0.05,
+          clearcoat: 0,
+          clearcoatRoughness: 0.5,
+          reflectivity: 0.2,
+          iridescence: 0,
+          envMapIntensity: 0.5
+        };
       case 'metallic':
-        return { roughness: 0.25, metalness: 0.8, clearcoat: 0.6 };
+        return {
+          roughness: 0.22,
+          metalness: 0.85,
+          clearcoat: 0.8,
+          clearcoatRoughness: 0.1,
+          reflectivity: 0.9,
+          iridescence: 0.1,
+          envMapIntensity: 1.4
+        };
       case 'pearlescent':
+        return {
+          roughness: 0.14,
+          metalness: 0.45,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.05,
+          reflectivity: 0.95,
+          iridescence: 0.7,
+          iridescenceIOR: 1.6,
+          envMapIntensity: 1.5
+        };
       case 'chameleon':
-        return { roughness: 0.15, metalness: 0.5, clearcoat: 1.0 };
+        return {
+          roughness: 0.12,
+          metalness: 0.5,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.04,
+          reflectivity: 1.0,
+          iridescence: 1.0,
+          iridescenceIOR: 1.8,
+          envMapIntensity: 1.6
+        };
       case 'carbon':
-        return { roughness: 0.5, metalness: 0.2, clearcoat: 0.3 };
+        return {
+          roughness: 0.45,
+          metalness: 0.25,
+          clearcoat: 0.5,
+          clearcoatRoughness: 0.2,
+          reflectivity: 0.5,
+          iridescence: 0,
+          envMapIntensity: 0.9
+        };
       case 'rust':
-        return { roughness: 0.95, metalness: 0.05, clearcoat: 0 };
+        return {
+          roughness: 0.96,
+          metalness: 0.05,
+          clearcoat: 0,
+          clearcoatRoughness: 0.8,
+          reflectivity: 0.1,
+          iridescence: 0,
+          envMapIntensity: 0.3
+        };
       case 'gloss':
       default:
-        return { roughness: 0.2, metalness: 0.1, clearcoat: 0.8 };
+        return {
+          roughness: 0.18,
+          metalness: 0.15,
+          clearcoat: 0.95,
+          clearcoatRoughness: 0.06,
+          reflectivity: 0.85,
+          iridescence: 0,
+          envMapIntensity: 1.2
+        };
     }
   }, [liveryState.finish]);
 
@@ -102,7 +162,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           {/* Main Wedge Body */}
           <mesh castShadow receiveShadow position={[0, 0.3, 0]}>
             <boxGeometry args={[2.0, 0.5, 4.4]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={bodyTexture || undefined}
               color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
               {...finishParams}
@@ -113,11 +173,22 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <mesh position={[0, 0.75, -0.2]}>
             <boxGeometry args={[1.6, 0.45, 2.0]} />
             <meshPhysicalMaterial
-              color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : liveryState.windowTint === 'pink_neon' ? '#ff007f' : '#0d111a'}
-              transmission={0.7}
+              color={
+                liveryState.windowTint === 'cyan_neon'
+                  ? '#00f0ff'
+                  : liveryState.windowTint === 'pink_neon'
+                  ? '#ff007f'
+                  : liveryState.windowTint === 'dark_limo'
+                  ? '#05070c'
+                  : '#0d111a'
+              }
+              transmission={liveryState.windowTint === 'dark_limo' ? 0.35 : 0.8}
               opacity={1}
               transparent
-              roughness={0.1}
+              roughness={0.05}
+              clearcoat={1.0}
+              clearcoatRoughness={0.05}
+              ior={1.52}
             />
           </mesh>
 
@@ -125,7 +196,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <group ref={hoodRef} position={[0, 0.55, 1.2]}>
             <mesh castShadow position={[0, 0, 0.6]}>
               <boxGeometry args={[1.7, 0.12, 1.2]} />
-              <meshStandardMaterial
+              <meshPhysicalMaterial
                 map={bodyTexture || undefined}
                 color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
                 {...finishParams}
@@ -137,7 +208,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <group ref={leftDoorRef} position={[-0.95, 0.55, 0.2]}>
             <mesh castShadow position={[0, 0, -0.5]}>
               <boxGeometry args={[0.1, 0.4, 1.2]} />
-              <meshStandardMaterial
+              <meshPhysicalMaterial
                 map={bodyTexture || undefined}
                 color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
                 {...finishParams}
@@ -149,15 +220,15 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <group position={[0, 0.8, -2.0]}>
             <mesh position={[0, 0.2, 0]}>
               <boxGeometry args={[2.2, 0.06, 0.4]} />
-              <meshStandardMaterial color="#111111" roughness={0.3} />
+              <meshPhysicalMaterial color="#111111" roughness={0.3} metalness={0.8} clearcoat={0.6} />
             </mesh>
             <mesh position={[-0.8, 0, 0]}>
               <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
-              <meshStandardMaterial color="#111111" />
+              <meshPhysicalMaterial color="#111111" metalness={0.9} />
             </mesh>
             <mesh position={[0.8, 0, 0]}>
               <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
-              <meshStandardMaterial color="#111111" />
+              <meshPhysicalMaterial color="#111111" metalness={0.9} />
             </mesh>
           </group>
 
@@ -192,7 +263,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
         <group position={[0, 0.6, 0]}>
           <mesh castShadow receiveShadow position={[0, 0.35, 0]}>
             <boxGeometry args={[1.9, 0.55, 4.2]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={bodyTexture || undefined}
               color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
               {...finishParams}
@@ -202,7 +273,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <group ref={hoodRef} position={[0, 0.55, 0.8]}>
             <mesh castShadow position={[0, 0, 0.7]}>
               <boxGeometry args={[1.65, 0.15, 1.4]} />
-              <meshStandardMaterial
+              <meshPhysicalMaterial
                 map={bodyTexture || undefined}
                 color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
                 {...finishParams}
@@ -212,7 +283,21 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
 
           <mesh position={[0, 0.8, -0.4]}>
             <sphereGeometry args={[0.9, 16, 16]} />
-            <meshPhysicalMaterial color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : '#0b0f19'} roughness={0.1} transmission={0.75} transparent />
+            <meshPhysicalMaterial
+              color={
+                liveryState.windowTint === 'cyan_neon'
+                  ? '#00f0ff'
+                  : liveryState.windowTint === 'pink_neon'
+                  ? '#ff007f'
+                  : liveryState.windowTint === 'dark_limo'
+                  ? '#05070c'
+                  : '#0b0f19'
+              }
+              roughness={0.05}
+              transmission={liveryState.windowTint === 'dark_limo' ? 0.35 : 0.8}
+              transparent
+              clearcoat={1.0}
+            />
           </mesh>
 
           <group position={[0, 0.42, 2.05]}>
@@ -228,11 +313,11 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
 
           <mesh position={[-0.5, 0.15, -2.12]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.08, 0.08, 0.2, 16]} />
-            <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.1} />
+            <meshPhysicalMaterial color="#cccccc" metalness={0.95} roughness={0.1} clearcoat={1.0} />
           </mesh>
           <mesh position={[0.5, 0.15, -2.12]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.08, 0.08, 0.2, 16]} />
-            <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.1} />
+            <meshPhysicalMaterial color="#cccccc" metalness={0.95} roughness={0.1} clearcoat={1.0} />
           </mesh>
         </group>
       )}
@@ -242,7 +327,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
         <group position={[0, 0.65, 0]}>
           <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
             <boxGeometry args={[2.1, 0.65, 4.5]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={bodyTexture || undefined}
               color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
               {...finishParams}
@@ -251,12 +336,12 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
 
           <mesh castShadow position={[0, 0.85, 1.2]}>
             <boxGeometry args={[0.6, 0.25, 0.8]} />
-            <meshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
+            <meshPhysicalMaterial color="#111111" metalness={0.9} roughness={0.15} clearcoat={0.7} />
           </mesh>
 
           <mesh position={[0, 0.9, -0.3]}>
             <boxGeometry args={[1.7, 0.45, 1.8]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={bodyTexture || undefined}
               color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
               {...finishParams}
@@ -265,7 +350,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
 
           <mesh position={[0, 0.4, 2.26]}>
             <boxGeometry args={[1.8, 0.35, 0.05]} />
-            <meshStandardMaterial color="#050505" roughness={0.9} />
+            <meshPhysicalMaterial color="#050505" roughness={0.9} metalness={0.1} />
           </mesh>
 
           <group position={[0, 0.4, 2.28]}>
@@ -286,7 +371,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
         <group position={[0, 0.7, 0]}>
           <mesh castShadow position={[0, 0.4, 0]}>
             <boxGeometry args={[0.6, 0.5, 1.8]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={bodyTexture || undefined}
               color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
               {...finishParams}
@@ -295,12 +380,12 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
 
           <mesh position={[0, 0.1, 0]}>
             <boxGeometry args={[0.5, 0.4, 0.8]} />
-            <meshStandardMaterial color="#222222" metalness={0.9} roughness={0.2} />
+            <meshPhysicalMaterial color="#222222" metalness={0.9} roughness={0.2} clearcoat={0.5} />
           </mesh>
 
           <mesh position={[0, 0.65, 0.95]}>
             <boxGeometry args={[0.5, 0.4, 0.05]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={bodyTexture || undefined}
               color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
               {...finishParams}
@@ -309,7 +394,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
 
           <mesh position={[0, 0.85, 0.7]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.03, 0.03, 1.1, 16]} />
-            <meshStandardMaterial color="#111111" />
+            <meshPhysicalMaterial color="#111111" metalness={0.8} />
           </mesh>
         </group>
       )}
@@ -335,12 +420,12 @@ const Wheel: React.FC<{ position: [number, number, number]; rimColor: string }> 
       {/* Custom Metallic Rim */}
       <mesh rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.22, 0.22, 0.3, 16]} />
-        <meshStandardMaterial color={rimColor} metalness={0.95} roughness={0.1} />
+        <meshPhysicalMaterial color={rimColor} metalness={0.95} roughness={0.08} clearcoat={1.0} clearcoatRoughness={0.05} />
       </mesh>
       {/* Brake Caliper */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[0.1, 0.2, 0.15]} />
-        <meshStandardMaterial color="#ff0033" metalness={0.5} />
+        <meshStandardMaterial color="#ff0033" metalness={0.6} roughness={0.3} />
       </mesh>
     </group>
   );
