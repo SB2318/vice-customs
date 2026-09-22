@@ -14,10 +14,17 @@ export const PRESET_LIVERIES: PresetLivery[] = [
       pearlescentColor: '#00f0ff',
       underglowEnabled: true,
       underglowColor: '#00f0ff',
+      underglowBeatPulse: true,
       headlightsOn: true,
       headlightsColor: '#00f0ff',
       doorsOpen: false,
       hoodOpen: false,
+      spoilerStyle: 'gt_wing',
+      rimStyle: 'cyber_dish',
+      rimColor: '#00f0ff',
+      windowTint: 'cyan_neon',
+      isRainyWeather: true,
+      isExhaustFlamesActive: false,
       decals: [
         {
           id: 'preset_d1',
@@ -128,6 +135,12 @@ export const PRESET_LIVERIES: PresetLivery[] = [
       headlightsColor: '#ffffff',
       doorsOpen: false,
       hoodOpen: false,
+      spoilerStyle: 'ducktail',
+      rimStyle: 'spoke',
+      rimColor: '#39ff14',
+      windowTint: 'dark_limo',
+      isRainyWeather: false,
+      isExhaustFlamesActive: false,
       decals: [
         {
           id: 'sprunk_d1',
@@ -202,6 +215,12 @@ export const PRESET_LIVERIES: PresetLivery[] = [
       headlightsColor: '#ff5500',
       doorsOpen: false,
       hoodOpen: false,
+      spoilerStyle: 'drag',
+      rimStyle: 'steelies',
+      rimColor: '#ffea00',
+      windowTint: 'pink_neon',
+      isRainyWeather: true,
+      isExhaustFlamesActive: false,
       decals: [
         {
           id: 'flame_d1',
@@ -294,6 +313,12 @@ export const PRESET_LIVERIES: PresetLivery[] = [
       headlightsColor: '#00f0ff',
       doorsOpen: false,
       hoodOpen: false,
+      spoilerStyle: 'stock',
+      rimStyle: 'gold_wire',
+      rimColor: '#ffea00',
+      windowTint: 'cyan_neon',
+      isRainyWeather: false,
+      isExhaustFlamesActive: false,
       decals: [
         {
           id: 'cyber_d1',

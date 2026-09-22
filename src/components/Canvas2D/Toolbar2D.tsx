@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { LiveryState, PaintFinish, DecalCategory, DecalLayer } from '../../types';
+import { LiveryState, PaintFinish, DecalCategory, DecalLayer, WindowTint } from '../../types';
 import { DECAL_LIBRARY, DECAL_CATEGORIES } from '../../utils/decalLibrary';
 import { audioEngine } from '../../utils/audioEngine';
-import { Paintbrush, Layers, Type as TypeIcon, Sparkles, Trash2, Eye, EyeOff, ArrowUp, ArrowDown, FlipHorizontal, Sliders } from 'lucide-react';
+import { Paintbrush, Layers, Type as TypeIcon, Sparkles, Trash2, Eye, EyeOff, ArrowUp, ArrowDown, FlipHorizontal, CloudRain, Disc, Copy } from 'lucide-react';
 
 interface Toolbar2DProps {
   liveryState: LiveryState;
@@ -28,7 +28,7 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
   onUpdateDecal,
   onRemoveDecal
 }) => {
-  const [activeTab, setActiveTab] = useState<'paint' | 'decals' | 'text' | 'layers'>('paint');
+  const [activeTab, setActiveTab] = useState<'paint' | 'decals' | 'text' | 'tuning' | 'layers'>('paint');
   const [decalCategory, setDecalCategory] = useState<DecalCategory>('stripe');
 
   // Custom Text & Plate inputs
@@ -110,52 +110,76 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
     });
   };
 
+  // 1-Click Mirror Decal to Opposite Side
+  const handleMirrorDecal = () => {
+    if (!selectedDecal) return;
+    audioEngine.playSprayPaintSFX();
+    onAddDecal({
+      ...selectedDecal,
+      id: undefined,
+      name: `${selectedDecal.name} (Mirrored)`,
+      x: 1024 - selectedDecal.x, // Mirror X axis
+      flipX: !selectedDecal.flipX
+    });
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-[#10101c] border border-vice-border rounded-xl overflow-hidden shadow-2xl">
       {/* TABS NAVIGATION */}
-      <div className="flex bg-[#0b0b14] border-b border-vice-border">
+      <div className="flex bg-[#0b0b14] border-b border-vice-border overflow-x-auto scrollbar-none">
         <button
           onClick={() => { setActiveTab('paint'); audioEngine.playClickSFX(); }}
-          className={`flex-1 py-3 px-2 flex items-center justify-center gap-2 text-xs font-vice transition-all ${
+          className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
             activeTab === 'paint'
               ? 'bg-vice-card text-vice-pink border-b-2 border-vice-pink shadow-neon-pink'
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          <Paintbrush size={16} /> Paint & Finish
+          <Paintbrush size={15} /> Paint
         </button>
 
         <button
           onClick={() => { setActiveTab('decals'); audioEngine.playClickSFX(); }}
-          className={`flex-1 py-3 px-2 flex items-center justify-center gap-2 text-xs font-vice transition-all ${
+          className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
             activeTab === 'decals'
               ? 'bg-vice-card text-vice-cyan border-b-2 border-vice-cyan shadow-neon-cyan'
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          <Sparkles size={16} /> Decals Studio
+          <Sparkles size={15} /> Decals
         </button>
 
         <button
           onClick={() => { setActiveTab('text'); audioEngine.playClickSFX(); }}
-          className={`flex-1 py-3 px-2 flex items-center justify-center gap-2 text-xs font-vice transition-all ${
+          className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
             activeTab === 'text'
               ? 'bg-vice-card text-vice-yellow border-b-2 border-vice-yellow shadow-neon-yellow'
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          <TypeIcon size={16} /> Text & Plates
+          <TypeIcon size={15} /> Text/Plates
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('tuning'); audioEngine.playClickSFX(); }}
+          className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
+            activeTab === 'tuning'
+              ? 'bg-vice-card text-vice-orange border-b-2 border-vice-orange shadow-lg'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Disc size={15} /> Tuning & Rain
         </button>
 
         <button
           onClick={() => { setActiveTab('layers'); audioEngine.playClickSFX(); }}
-          className={`flex-1 py-3 px-2 flex items-center justify-center gap-2 text-xs font-vice transition-all ${
+          className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
             activeTab === 'layers'
               ? 'bg-vice-card text-vice-purple border-b-2 border-vice-purple shadow-neon-purple'
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          <Layers size={16} /> Layers ({liveryState.decals.length})
+          <Layers size={15} /> Layers ({liveryState.decals.length})
         </button>
       </div>
 
@@ -164,7 +188,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         {/* --- TAB 1: PAINT & FINISH --- */}
         {activeTab === 'paint' && (
           <div className="space-y-6">
-            {/* Primary Paint Color */}
             <div>
               <label className="text-xs font-vice text-gray-300 block mb-2 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-vice-pink" /> PRIMARY BODY COAT
@@ -193,7 +216,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
               </div>
             </div>
 
-            {/* Secondary Accent Paint */}
             <div>
               <label className="text-xs font-vice text-gray-300 block mb-2 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-vice-cyan" /> DUAL-TONE SECONDARY ACCENT
@@ -212,7 +234,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
               </div>
             </div>
 
-            {/* Paint Finish Selector */}
             <div>
               <label className="text-xs font-vice text-gray-300 block mb-2">FINISH MATERIAL Patina</label>
               <div className="grid grid-cols-2 gap-2">
@@ -238,7 +259,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         {/* --- TAB 2: DECALS STUDIO LIBRARY --- */}
         {activeTab === 'decals' && (
           <div className="space-y-4">
-            {/* Category Filter */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
               {DECAL_CATEGORIES.filter(c => c.id !== 'plate' && c.id !== 'text').map(cat => (
                 <button
@@ -255,7 +275,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
               ))}
             </div>
 
-            {/* Decal Items Grid */}
             <div className="grid grid-cols-2 gap-3">
               {DECAL_LIBRARY.filter(d => d.category === decalCategory).map(decal => (
                 <button
@@ -280,7 +299,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         {/* --- TAB 3: TEXT & PLATES --- */}
         {activeTab === 'text' && (
           <div className="space-y-6">
-            {/* Custom Typography Generator */}
             <div className="bg-[#141424] p-4 rounded-xl border border-vice-border space-y-3">
               <h4 className="text-xs font-vice text-vice-yellow flex items-center gap-2">
                 <TypeIcon size={16} /> CUSTOM RACING TYPOGRAPHY
@@ -330,7 +348,6 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
               </button>
             </div>
 
-            {/* License Plate Generator */}
             <div className="bg-[#141424] p-4 rounded-xl border border-vice-border space-y-3">
               <h4 className="text-xs font-vice text-vice-pink flex items-center gap-2">
                 🚘 LICENSE PLATE CREATOR
@@ -384,7 +401,75 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
           </div>
         )}
 
-        {/* --- TAB 4: LAYERS MANAGER & ACTIVE DECAL CONTROLS --- */}
+        {/* --- TAB 4: TUNING & WEATHER STUDIO --- */}
+        {activeTab === 'tuning' && (
+          <div className="space-y-6">
+            {/* Rainy Cyberpunk Weather Mode Toggle */}
+            <div className="bg-[#141424] p-4 rounded-xl border border-vice-cyan shadow-neon-cyan/40 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CloudRain className="text-vice-cyan" size={24} />
+                <div>
+                  <h4 className="text-xs font-vice text-white">RAINY VICE NIGHT ATMOSPHERE</h4>
+                  <p className="text-[10px] text-gray-400">3D rain particles, wet floor puddles & storm lighting</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  onUpdateState({ isRainyWeather: !liveryState.isRainyWeather });
+                  audioEngine.playClickSFX();
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-vice font-bold border transition-all ${
+                  liveryState.isRainyWeather
+                    ? 'bg-vice-cyan text-black border-vice-cyan shadow-neon-cyan'
+                    : 'bg-[#1a1a2e] text-gray-400 border-gray-700'
+                }`}
+              >
+                {liveryState.isRainyWeather ? 'RAIN ON 🌧️' : 'OFF'}
+              </button>
+            </div>
+
+            {/* Rim Color Selector */}
+            <div>
+              <label className="text-xs font-vice text-gray-300 block mb-2 flex items-center gap-2">
+                <Disc size={16} className="text-vice-yellow" /> METALLIC RIM COLOR TUNING
+              </label>
+              <div className="grid grid-cols-6 gap-2">
+                {['#e5e5e5', '#ffea00', '#00f0ff', '#ff007f', '#39ff14', '#111111'].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => onUpdateState({ rimColor: c })}
+                    style={{ backgroundColor: c }}
+                    className={`h-9 rounded-lg border-2 transition-transform hover:scale-110 ${
+                      liveryState.rimColor === c ? 'border-white scale-105 ring-2 ring-vice-yellow' : 'border-transparent'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Window Tint Selector */}
+            <div>
+              <label className="text-xs font-vice text-gray-300 block mb-2">WINDOW TINT FILM</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['clear', 'dark_limo', 'pink_neon', 'cyan_neon'] as WindowTint[]).map(tint => (
+                  <button
+                    key={tint}
+                    onClick={() => onUpdateState({ windowTint: tint })}
+                    className={`py-2 px-3 rounded-lg text-xs font-vice uppercase border transition-all text-left flex items-center justify-between ${
+                      liveryState.windowTint === tint
+                        ? 'bg-vice-card border-vice-cyan text-vice-cyan shadow-neon-cyan'
+                        : 'bg-[#181828] border-vice-border text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <span>{tint.replace('_', ' ')}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB 5: LAYERS MANAGER --- */}
         {activeTab === 'layers' && (
           <div className="space-y-4">
             {selectedDecal && (
@@ -421,7 +506,15 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-700">
+                  <button
+                    onClick={handleMirrorDecal}
+                    className="px-2.5 py-1 bg-vice-cyan/20 border border-vice-cyan rounded text-[10px] font-vice text-vice-cyan hover:bg-vice-cyan hover:text-black flex items-center gap-1 font-bold shadow-neon-cyan/40"
+                    title="Mirror selected decal to opposite side of car body"
+                  >
+                    <Copy size={13} /> Mirror to Right Door 🪞
+                  </button>
+
                   <button
                     onClick={() => onUpdateDecal(selectedDecal.id, { flipX: !selectedDecal.flipX })}
                     className="px-2 py-1 bg-black/50 rounded text-[10px] font-vice text-gray-300 hover:text-white flex items-center gap-1"
@@ -432,7 +525,7 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
                     onClick={() => onUpdateDecal(selectedDecal.id, { zIndex: selectedDecal.zIndex + 1 })}
                     className="px-2 py-1 bg-black/50 rounded text-[10px] font-vice text-gray-300 hover:text-white flex items-center gap-1"
                   >
-                    <ArrowUp size={14} /> Raise Layer
+                    <ArrowUp size={14} /> Raise
                   </button>
                   <button
                     onClick={() => onUpdateDecal(selectedDecal.id, { zIndex: Math.max(1, selectedDecal.zIndex - 1) })}

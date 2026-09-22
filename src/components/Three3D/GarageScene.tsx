@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -25,8 +25,8 @@ export const GarageScene: React.FC<GarageSceneProps> = ({
         className="w-full h-full"
         gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
       >
-        <color attach="background" args={['#06060e']} />
-        <fog attach="fog" args={['#06060e', 8, 25]} />
+        <color attach="background" args={[liveryState.isRainyWeather ? '#04040a' : '#06060e']} />
+        <fog attach="fog" args={[liveryState.isRainyWeather ? '#04040a' : '#06060e', 6, 20]} />
 
         {/* LIGHTING SETUP - VICE CITY SYNTHWAVE GARAGE */}
         <ambientLight intensity={0.4} color="#101030" />
@@ -56,7 +56,10 @@ export const GarageScene: React.FC<GarageSceneProps> = ({
         <Vehicle3D liveryState={liveryState} canvasElement={canvasElement} />
 
         {/* GARAGE ENVIRONMENT */}
-        <GarageEnvironment />
+        <GarageEnvironment isRainy={liveryState.isRainyWeather} />
+
+        {/* 3D RAIN PARTICLES FX */}
+        {liveryState.isRainyWeather && <RainParticles />}
 
         {/* CAMERA CONTROLLER */}
         <CameraController cameraPreset={cameraPreset} />
@@ -66,12 +69,57 @@ export const GarageScene: React.FC<GarageSceneProps> = ({
       <div className="pointer-events-none absolute top-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1 rounded text-xs font-vice text-vice-pink border border-vice-pink/30 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-vice-pink animate-pulse" />
         VICE CUSTOMS 3D STUDIO (R3F)
+        {liveryState.isRainyWeather && <span className="text-vice-cyan font-bold">🌧️ RAINY NIGHT</span>}
       </div>
 
       <div className="pointer-events-none absolute bottom-3 right-3 text-[11px] font-vice text-gray-400 bg-black/60 px-3 py-1 rounded border border-gray-800">
         MODEL: <span className="text-vice-cyan uppercase">{liveryState.vehicle}</span> | FINISH: <span className="text-vice-yellow uppercase">{liveryState.finish}</span>
       </div>
     </div>
+  );
+};
+
+// 3D RAIN PARTICLES COMPONENT
+const RainParticles: React.FC = () => {
+  const rainRef = useRef<THREE.Points>(null);
+  const count = 1200;
+
+  const [positions] = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 16;
+      pos[i * 3 + 1] = Math.random() * 10;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 16;
+    }
+    return [pos];
+  }, [count]);
+
+  useFrame((state, delta) => {
+    if (!rainRef.current) return;
+    const geo = rainRef.current.geometry;
+    const posArr = geo.attributes.position.array as Float32Array;
+
+    for (let i = 0; i < count; i++) {
+      posArr[i * 3 + 1] -= delta * 12;
+      if (posArr[i * 3 + 1] < 0) {
+        posArr[i * 3 + 1] = 10;
+      }
+    }
+    geo.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={rainRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={count}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial size={0.05} color="#00f0ff" transparent opacity={0.6} />
+    </points>
   );
 };
 
@@ -96,6 +144,10 @@ const CameraController: React.FC<{ cameraPreset: CameraPreset }> = ({ cameraPres
       case 'door_closeup':
         controls.object.position.set(-2.6, 1.2, 0.8);
         break;
+      case 'turntable':
+      case 'cinematic':
+        controls.object.position.set(4.2, 1.8, 3.8);
+        break;
       case 'front_34':
       default:
         controls.object.position.set(3.8, 2.0, 4.2);
@@ -106,7 +158,7 @@ const CameraController: React.FC<{ cameraPreset: CameraPreset }> = ({ cameraPres
   }, [cameraPreset]);
 
   useFrame((state, delta) => {
-    if (cameraPreset === 'turntable' && orbitRef.current) {
+    if ((cameraPreset === 'turntable' || cameraPreset === 'cinematic') && orbitRef.current) {
       orbitRef.current.azimuthAngle += delta * 0.4;
       orbitRef.current.update();
     }
@@ -119,13 +171,13 @@ const CameraController: React.FC<{ cameraPreset: CameraPreset }> = ({ cameraPres
       enableZoom={true}
       minDistance={2.0}
       maxDistance={12.0}
-      maxPolarAngle={Math.PI / 2 - 0.02} // Prevent camera clipping floor
+      maxPolarAngle={Math.PI / 2 - 0.02}
     />
   );
 };
 
 // GARAGE ENVIRONMENT (Reflective Floor, Neon Light Bars, Lift Pillars)
-const GarageEnvironment: React.FC = () => {
+const GarageEnvironment: React.FC<{ isRainy: boolean }> = ({ isRainy }) => {
   return (
     <group position={[0, 0, 0]}>
       {/* Wet Reflective Floor */}
@@ -134,10 +186,10 @@ const GarageEnvironment: React.FC = () => {
         <MeshReflectorMaterial
           blur={[300, 100]}
           resolution={1024}
-          mirror={0.6}
+          mirror={isRainy ? 0.85 : 0.6}
           mixBlur={0.8}
-          mixStrength={1.5}
-          roughness={0.2}
+          mixStrength={isRainy ? 2.5 : 1.5}
+          roughness={isRainy ? 0.08 : 0.2}
           depthScale={1.2}
           minDepthThreshold={0.4}
           maxDepthThreshold={1.4}

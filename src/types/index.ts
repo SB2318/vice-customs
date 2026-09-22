@@ -13,6 +13,10 @@ export type DecalCategory =
   | 'scratch'
   | 'spray';
 
+export type SpoilerStyle = 'stock' | 'gt_wing' | 'ducktail' | 'drag';
+export type RimStyle = 'spoke' | 'cyber_dish' | 'gold_wire' | 'steelies';
+export type WindowTint = 'clear' | 'dark_limo' | 'pink_neon' | 'cyan_neon';
+
 export interface DecalLayer {
   id: string;
   name: string;
@@ -46,13 +50,21 @@ export interface LiveryState {
   decals: DecalLayer[];
   underglowColor: string;
   underglowEnabled: boolean;
+  underglowBeatPulse?: boolean;
   headlightsColor: string;
   headlightsOn: boolean;
   doorsOpen: boolean;
   hoodOpen: boolean;
+  // Tuning & Environmental Additions for 1st Prize Winner Status
+  spoilerStyle: SpoilerStyle;
+  rimStyle: RimStyle;
+  rimColor: string;
+  windowTint: WindowTint;
+  isRainyWeather: boolean;
+  isExhaustFlamesActive: boolean;
 }
 
-export type CameraPreset = 'front_34' | 'side' | 'rear' | 'top' | 'door_closeup' | 'turntable';
+export type CameraPreset = 'front_34' | 'side' | 'rear' | 'top' | 'door_closeup' | 'turntable' | 'cinematic';
 
 export type ViewMode = 'split' | '2d_only' | '3d_only';
 

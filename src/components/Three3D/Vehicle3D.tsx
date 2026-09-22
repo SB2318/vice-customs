@@ -12,7 +12,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
   const vehicleGroupRef = useRef<THREE.Group>(null);
   const leftDoorRef = useRef<THREE.Group>(null);
   const hoodRef = useRef<THREE.Group>(null);
-  const wheelsRef = useRef<THREE.Group[]>([]);
 
   // Create & Update Three.js CanvasTexture live from 2D Canvas
   const bodyTexture = useMemo(() => {
@@ -62,18 +61,38 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
   }, [liveryState.finish]);
 
   const underglowColor = liveryState.underglowEnabled ? liveryState.underglowColor : '#000000';
+  const rimColor = liveryState.rimColor || '#e5e5e5';
 
   return (
     <group ref={vehicleGroupRef} position={[0, 0, 0]}>
       {/* UNDERGLOW NEON LIGHTING STRIPS & GROUND LIGHT */}
       {liveryState.underglowEnabled && (
         <group position={[0, 0.05, 0]}>
-          <pointLight color={underglowColor} intensity={8} distance={6} decay={2} />
+          <pointLight color={underglowColor} intensity={liveryState.underglowBeatPulse ? 14 : 8} distance={6} decay={2} />
           {/* Neon Light Tube Bar Mesh */}
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[1.8, 0.04, 3.8]} />
             <meshBasicMaterial color={underglowColor} />
           </mesh>
+        </group>
+      )}
+
+      {/* 3D REAR EXHAUST BACKFIRE FLAMES FX */}
+      {liveryState.isExhaustFlamesActive && (
+        <group position={[0, 0.4, -2.3]}>
+          {/* Left Exhaust Flame Cone */}
+          <mesh position={[-0.5, 0, -0.4]} rotation={[-Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.22, 0.9, 16]} />
+            <meshBasicMaterial color="#ff5500" transparent opacity={0.9} />
+          </mesh>
+          <pointLight position={[-0.5, 0, -0.4]} color="#ff5500" intensity={15} distance={5} />
+
+          {/* Right Exhaust Flame Cone */}
+          <mesh position={[0.5, 0, -0.4]} rotation={[-Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.22, 0.9, 16]} />
+            <meshBasicMaterial color="#ffea00" transparent opacity={0.9} />
+          </mesh>
+          <pointLight position={[0.5, 0, -0.4]} color="#ffea00" intensity={15} distance={5} />
         </group>
       )}
 
@@ -90,16 +109,15 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
-          {/* Cabin Greenhouse Glass */}
+          {/* Cabin Glass */}
           <mesh position={[0, 0.75, -0.2]}>
             <boxGeometry args={[1.6, 0.45, 2.0]} />
             <meshPhysicalMaterial
-              color="#0d111a"
-              transmission={0.8}
+              color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : liveryState.windowTint === 'pink_neon' ? '#ff007f' : '#0d111a'}
+              transmission={0.7}
               opacity={1}
               transparent
               roughness={0.1}
-              ior={1.5}
             />
           </mesh>
 
@@ -172,7 +190,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
       {/* --- BANSHEE GTS SPORTS CAR --- */}
       {liveryState.vehicle === 'banshee' && (
         <group position={[0, 0.6, 0]}>
-          {/* Main Curved Body */}
           <mesh castShadow receiveShadow position={[0, 0.35, 0]}>
             <boxGeometry args={[1.9, 0.55, 4.2]} />
             <meshStandardMaterial
@@ -182,7 +199,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
-          {/* Long Front Bonnet / Hood */}
           <group ref={hoodRef} position={[0, 0.55, 0.8]}>
             <mesh castShadow position={[0, 0, 0.7]}>
               <boxGeometry args={[1.65, 0.15, 1.4]} />
@@ -194,13 +210,11 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             </mesh>
           </group>
 
-          {/* Cabin Glass */}
           <mesh position={[0, 0.8, -0.4]}>
             <sphereGeometry args={[0.9, 16, 16]} />
-            <meshPhysicalMaterial color="#0b0f19" roughness={0.1} transmission={0.75} transparent />
+            <meshPhysicalMaterial color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : '#0b0f19'} roughness={0.1} transmission={0.75} transparent />
           </mesh>
 
-          {/* Headlights */}
           <group position={[0, 0.42, 2.05]}>
             <mesh position={[-0.65, 0, 0]}>
               <sphereGeometry args={[0.18, 16, 16]} />
@@ -210,12 +224,8 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
               <sphereGeometry args={[0.18, 16, 16]} />
               <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#222222'} />
             </mesh>
-            {liveryState.headlightsOn && (
-              <spotLight position={[0, 0, 0.2]} target-position={[0, -0.5, 10]} color={liveryState.headlightsColor} intensity={15} distance={18} angle={0.6} />
-            )}
           </group>
 
-          {/* Dual Rear Exhaust Pipes */}
           <mesh position={[-0.5, 0.15, -2.12]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.08, 0.08, 0.2, 16]} />
             <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.1} />
@@ -230,7 +240,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
       {/* --- DOMINATOR MUSCLE CAR --- */}
       {liveryState.vehicle === 'dominator' && (
         <group position={[0, 0.65, 0]}>
-          {/* Heavy Muscle Chassis */}
           <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
             <boxGeometry args={[2.1, 0.65, 4.5]} />
             <meshStandardMaterial
@@ -240,13 +249,11 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
-          {/* High Blower Hood Scoop */}
           <mesh castShadow position={[0, 0.85, 1.2]}>
             <boxGeometry args={[0.6, 0.25, 0.8]} />
             <meshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
           </mesh>
 
-          {/* Cabin Roof */}
           <mesh position={[0, 0.9, -0.3]}>
             <boxGeometry args={[1.7, 0.45, 1.8]} />
             <meshStandardMaterial
@@ -256,13 +263,11 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
-          {/* Aggressive Front Grille */}
           <mesh position={[0, 0.4, 2.26]}>
             <boxGeometry args={[1.8, 0.35, 0.05]} />
             <meshStandardMaterial color="#050505" roughness={0.9} />
           </mesh>
 
-          {/* Quad Round Headlights */}
           <group position={[0, 0.4, 2.28]}>
             <mesh position={[-0.7, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.12, 0.12, 0.05, 16]} />
@@ -279,7 +284,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
       {/* --- STREET DEMON DIRTBIKE --- */}
       {liveryState.vehicle === 'dirtbike' && (
         <group position={[0, 0.7, 0]}>
-          {/* Bike Frame & Fuel Tank */}
           <mesh castShadow position={[0, 0.4, 0]}>
             <boxGeometry args={[0.6, 0.5, 1.8]} />
             <meshStandardMaterial
@@ -289,13 +293,11 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
-          {/* Exposed Engine Block */}
           <mesh position={[0, 0.1, 0]}>
             <boxGeometry args={[0.5, 0.4, 0.8]} />
             <meshStandardMaterial color="#222222" metalness={0.9} roughness={0.2} />
           </mesh>
 
-          {/* Front Number Plate & Fairing */}
           <mesh position={[0, 0.65, 0.95]}>
             <boxGeometry args={[0.5, 0.4, 0.05]} />
             <meshStandardMaterial
@@ -305,7 +307,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
-          {/* Handlebars */}
           <mesh position={[0, 0.85, 0.7]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.03, 0.03, 1.1, 16]} />
             <meshStandardMaterial color="#111111" />
@@ -313,17 +314,17 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
         </group>
       )}
 
-      {/* --- WHEELS ASSEMBLY --- */}
-      <Wheel position={[-0.95, 0.35, 1.4]} />
-      <Wheel position={[0.95, 0.35, 1.4]} />
-      <Wheel position={[-0.95, 0.35, -1.4]} />
-      <Wheel position={[0.95, 0.35, -1.4]} />
+      {/* --- WHEELS ASSEMBLY WITH CUSTOM RIMS --- */}
+      <Wheel position={[-0.95, 0.35, 1.4]} rimColor={rimColor} />
+      <Wheel position={[0.95, 0.35, 1.4]} rimColor={rimColor} />
+      <Wheel position={[-0.95, 0.35, -1.4]} rimColor={rimColor} />
+      <Wheel position={[0.95, 0.35, -1.4]} rimColor={rimColor} />
     </group>
   );
 };
 
-// Wheel Component with rubber tire tread & metallic rim
-const Wheel: React.FC<{ position: [number, number, number] }> = ({ position }) => {
+// Wheel Component with rubber tire tread & custom colored metallic rim
+const Wheel: React.FC<{ position: [number, number, number]; rimColor: string }> = ({ position, rimColor }) => {
   return (
     <group position={position}>
       {/* Rubber Tire */}
@@ -331,10 +332,10 @@ const Wheel: React.FC<{ position: [number, number, number] }> = ({ position }) =
         <cylinderGeometry args={[0.35, 0.35, 0.28, 24]} />
         <meshStandardMaterial color="#141414" roughness={0.9} />
       </mesh>
-      {/* Metallic Rim */}
+      {/* Custom Metallic Rim */}
       <mesh rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.22, 0.22, 0.3, 16]} />
-        <meshStandardMaterial color="#e5e5e5" metalness={0.95} roughness={0.1} />
+        <meshStandardMaterial color={rimColor} metalness={0.95} roughness={0.1} />
       </mesh>
       {/* Brake Caliper */}
       <mesh position={[0, 0, 0]}>
