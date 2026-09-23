@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { LiveryState, DecalLayer, ViewMode, CameraPreset, GraphicsQuality } from './types';
+import { LiveryState, DecalLayer, ViewMode, CameraPreset, GraphicsQuality, AppMode, HeistMission, ForgeryValidationResult } from './types';
 import { PRESET_LIVERIES } from './utils/presetLiveries';
 import { useLiveryHistory } from './utils/useLiveryHistory';
 import { decodeLiveryFromUrl } from './utils/shareUtils';
@@ -11,15 +11,27 @@ import { GarageScene } from './components/Three3D/GarageScene';
 import { GaragePresetsModal } from './components/UI/GaragePresetsModal';
 import { ExportModal } from './components/UI/ExportModal';
 import { VehicleTransitionLoader } from './components/UI/VehicleTransitionLoader';
-import { OnboardingTourModal } from './components/UI/OnboardingTourModal';
+import { HeistGameTourModal } from './components/UI/HeistGameTourModal';
 import { KeyboardShortcutsModal } from './components/UI/KeyboardShortcutsModal';
 import { ViceOutrunGameModal } from './components/UI/ViceOutrunGameModal';
+import { HeistMissionHub } from './components/UI/HeistMissionHub';
+import { EvidenceEditorModal } from './components/UI/EvidenceEditorModal';
+import { StoryConsequenceModal } from './components/UI/StoryConsequenceModal';
 import { GripVertical, GripHorizontal, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Mobile-only bottom tab
 type MobileTab = '2d' | '3d';
 
 export const App: React.FC = () => {
+  // Mode selection state: 'heist' (Vehicle Heist / The Forger focusable) or 'studio' (Vice Customs Garage)
+  const [appMode, setAppMode] = useState<AppMode>('heist');
+
+  // Vehicle Heist Game States
+  const [activeHeistMission, setActiveHeistMission] = useState<HeistMission | null>(null);
+  const [isEvidenceEditorOpen, setIsEvidenceEditorOpen] = useState(false);
+  const [forgeryResult, setForgeryResult] = useState<ForgeryValidationResult | null>(null);
+  const [isConsequenceOpen, setIsConsequenceOpen] = useState(false);
+
   // Check for shared livery in URL hash on initial load
   const initialLivery = (() => {
     try {
@@ -53,10 +65,8 @@ export const App: React.FC = () => {
   const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>('2d');
 
-  // ─── RESIZABLE SPLITTERS STATE ──────────────────────────────────────────────
-  // 1. Split between 2D suite & 3D studio (percentage: 25% to 75%, default 50%)
+  // Resizable splitters state
   const [mainSplitPercent, setMainSplitPercent] = useState<number>(50);
-  // 2. Split between 2D Canvas and Toolbar/Editor (percentage: 30% to 75%, default 58%)
   const [verticalSplitPercent, setVerticalSplitPercent] = useState<number>(58);
 
   const isDraggingMainSplit = useRef(false);
@@ -70,9 +80,7 @@ export const App: React.FC = () => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isGameOpen, setIsGameOpen] = useState(false);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
-    return !localStorage.getItem('vice_onboarded');
-  });
+  const [isGameTourOpen, setIsGameTourOpen] = useState(false);
 
   // Vehicle transition loader
   const prevVehicleRef = useRef(liveryState.vehicle);
@@ -86,7 +94,6 @@ export const App: React.FC = () => {
     }
   }, [liveryState.vehicle]);
 
-  // Partial State Updater with History Push (declared early — keyboard shortcuts useEffect depends on it)
   const handleUpdateLiveryState = useCallback((updates: Partial<LiveryState>) => {
     pushState(prev => ({ ...prev, ...updates }));
   }, [pushState]);
@@ -97,39 +104,28 @@ export const App: React.FC = () => {
       'front_34', 'front', 'side', 'rear', 'top', 'wheel', 'turntable', 'cinematic'
     ];
     const handler = (e: KeyboardEvent) => {
-      // Ignore when typing in inputs/textareas
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
 
-      // Undo / Redo
       if (e.ctrlKey && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
       if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); return; }
 
-      // Delete selected decal — handled in LiveryCanvas via its own listener, skip
-
-      // Camera preset 1-8
       const num = parseInt(e.key);
       if (!isNaN(num) && num >= 1 && num <= 8) {
         setCameraPreset(CAMERA_PRESET_MAP[num - 1]);
         return;
       }
 
-      // Test Drive Arcade Game shortcut (G)
       if ((e.key === 'g' || e.key === 'G') && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        setIsGameOpen(prev => !prev);
+        setIsGameTourOpen(prev => !prev);
         return;
       }
 
-      // Studio FX shortcuts
-      if (e.key === 'r' || e.key === 'R') {
-        return;
-      }
       if (e.key === 'u' || e.key === 'U') {
         handleUpdateLiveryState({ underglowEnabled: !liveryState.underglowEnabled });
         return;
       }
 
-      // Shortcuts modal
       if (e.key === '?') {
         setIsShortcutsOpen(prev => !prev);
         return;
@@ -193,11 +189,28 @@ export const App: React.FC = () => {
   }, [pushState]);
 
   const handleSaveUnlayerImage = useCallback((dataUrl: string) => {
-    // Store the Unlayer-edited image as the canvas base overlay layer
     pushState(prev => ({ ...prev, unlayerOverlayUrl: dataUrl }));
   }, [pushState]);
 
-  // ─── DRAG EVENT LISTENERS FOR SPLITTERS ─────────────────────────────────────
+  // Vehicle Heist Handler Actions
+  const handleSelectHeistMission = (mission: HeistMission) => {
+    setActiveHeistMission(mission);
+    setIsEvidenceEditorOpen(true);
+  };
+
+  const handleSubmitForgery = (result: ForgeryValidationResult) => {
+    setForgeryResult(result);
+    setIsEvidenceEditorOpen(false);
+    setIsConsequenceOpen(true);
+  };
+
+  const handleConsequenceContinue = () => {
+    setIsConsequenceOpen(false);
+    // Trigger getaway pursuit 3D game
+    setIsGameOpen(true);
+  };
+
+  // Drag splitters
   const handleStartMainSplitDrag = (e: React.PointerEvent) => {
     isDraggingMainSplit.current = true;
     setIsSplitDragging(true);
@@ -255,191 +268,219 @@ export const App: React.FC = () => {
       onPointerUp={handlePointerUp}
       className="h-[100dvh] w-full bg-[#070710] text-white flex flex-col font-sans select-none overflow-hidden"
     >
-      {/* TOP HEADER NAVIGATION */}
+      {/* TOP HEADER NAVIGATION (GARAGE STUDIO vs VEHICLE HEIST MODE SWITCH) */}
       <Header
         liveryState={liveryState}
         onUpdateState={handleUpdateLiveryState}
         viewMode={viewMode}
         onSelectViewMode={setViewMode}
+        appMode={appMode}
+        onSelectAppMode={setAppMode}
         onOpenPresetsModal={() => setIsPresetsOpen(true)}
         onOpenExportModal={() => setIsExportOpen(true)}
-        onOpenGameModal={() => setIsGameOpen(true)}
+        onOpenTour={() => setIsGameTourOpen(true)}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
       />
 
-      {/* ── MAIN WORKSPACE WITH DRAGGABLE RESIZERS ── */}
-      <main
-        ref={mainContainerRef}
-        className="flex-1 flex flex-col lg:flex-row p-1.5 sm:p-2 lg:p-3 min-h-0 relative gap-0 overflow-hidden"
-      >
-        {/* ── SECTION 1 & 2: 2D CANVAS & EDITOR SUITE ── */}
-        <div
-          ref={leftPanelRef}
-          style={{
-            width: viewMode === '2d_only' ? '100%' : viewMode === '3d_only' ? '0%' : `${mainSplitPercent}%`
-          }}
-          className={`
-            ${show2D ? 'flex' : 'hidden'}
-            ${mobileTab === '2d' ? 'w-full flex' : 'hidden lg:flex'}
-            flex-col
-            h-full
-            min-w-0 shrink-0
-          `}
+      {/* ── MODE 1: VEHICLE HEIST MODE (THE FORGER) ── */}
+      {appMode === 'heist' ? (
+        <HeistMissionHub
+          onSelectMission={handleSelectHeistMission}
+          onOpenTour={() => setIsGameTourOpen(true)}
+        />
+      ) : (
+        /* ── MODE 2: VICE CUSTOMS GARAGE STUDIO MODE ── */
+        <main
+          ref={mainContainerRef}
+          className="flex-1 flex flex-col lg:flex-row p-1.5 sm:p-2 lg:p-3 min-h-0 relative gap-0 overflow-hidden"
         >
-          {/* 1. 2D Texture Canvas Section (Top) */}
+          {/* 2D Canvas & Editor Suite Panel */}
+          <div
+            ref={leftPanelRef}
+            style={{
+              width: viewMode === '2d_only' ? '100%' : viewMode === '3d_only' ? '0%' : `${mainSplitPercent}%`
+            }}
+            className={`
+              ${show2D ? 'flex' : 'hidden'}
+              ${mobileTab === '2d' ? 'w-full flex' : 'hidden lg:flex'}
+              flex-col h-full min-w-0 shrink-0
+            `}
+          >
+            {/* 1. 2D Texture Canvas Section (Top) */}
+            <div
+              style={{
+                height: verticalSplitPercent === 0 ? '0%' : verticalSplitPercent === 100 ? '100%' : `${verticalSplitPercent}%`
+              }}
+              className={`w-full relative flex flex-col ${verticalSplitPercent === 0 ? 'hidden' : 'min-h-[180px] sm:min-h-[220px] shrink-0'}`}
+            >
+              <LiveryCanvas
+                liveryState={liveryState}
+                selectedDecalId={selectedDecalId}
+                onSelectDecal={setSelectedDecalId}
+                onUpdateDecal={handleUpdateDecal}
+                onCanvasRender={setCanvasElement}
+                onUndo={undo}
+                onRedo={redo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onOpenExportModal={() => setIsExportOpen(true)}
+              />
+            </div>
+
+            {/* Draggable Vertical Splitter */}
+            <div
+              onPointerDown={handleStartVerticalSplitDrag}
+              onDoubleClick={() => setVerticalSplitPercent(58)}
+              title="Drag up/down to resize Canvas vs Editor"
+              className="w-full h-4 sm:h-5 bg-[#0d0d1a] hover:bg-vice-pink/30 active:bg-vice-pink/50 cursor-row-resize flex items-center justify-center transition-colors group z-10 shrink-0 select-none border-y border-vice-border touch-none gap-6"
+            >
+              <button
+                onClick={(e) => { e.stopPropagation(); setVerticalSplitPercent(0); }}
+                className="p-1 bg-[#1a1a2e] border border-vice-pink/50 text-vice-pink hover:bg-vice-pink hover:text-white transition-all rounded shadow-neon-pink z-20 cursor-pointer"
+              >
+                <ChevronUp size={14} />
+              </button>
+
+              <div className="w-20 sm:w-24 h-1.5 rounded-full bg-gray-600 group-hover:bg-vice-pink group-hover:shadow-neon-pink transition-all flex items-center justify-center">
+                <GripHorizontal size={14} className="text-gray-400 group-hover:text-white" />
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); setVerticalSplitPercent(100); }}
+                className="p-1 bg-[#1a1a2e] border border-vice-pink/50 text-vice-pink hover:bg-vice-pink hover:text-white transition-all rounded shadow-neon-pink z-20 cursor-pointer"
+              >
+                <ChevronDown size={14} />
+              </button>
+            </div>
+
+            {/* 2. 2D Toolbar / Unlayer Editor Suite Section (Bottom) */}
+            <div className={`flex-1 overflow-hidden flex flex-col ${verticalSplitPercent === 100 ? 'hidden' : 'min-h-[140px] sm:min-h-[180px]'}`}>
+              <Toolbar2D
+                liveryState={liveryState}
+                onUpdateState={handleUpdateLiveryState}
+                selectedDecalId={selectedDecalId}
+                onSelectDecal={setSelectedDecalId}
+                onAddDecal={handleAddDecal}
+                onUpdateDecal={handleUpdateDecal}
+                onRemoveDecal={handleRemoveDecal}
+                canvasDataUrl={canvasElement ? canvasElement.toDataURL() : ''}
+                onSaveUnlayerImage={handleSaveUnlayerImage}
+              />
+            </div>
+          </div>
+
+          {/* Main Horizontal Splitter (Between 2D Suite and 3D Studio) */}
+          {viewMode === 'split' && (
+            <div
+              onPointerDown={handleStartMainSplitDrag}
+              onDoubleClick={() => setMainSplitPercent(50)}
+              className="hidden lg:flex w-5 h-full bg-[#0d0d1a] hover:bg-vice-cyan/30 active:bg-vice-cyan/50 cursor-col-resize flex-col items-center justify-center transition-colors group z-20 shrink-0 select-none border-x border-vice-border mx-0.5 touch-none gap-6"
+            >
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode('3d_only'); }}
+                className="p-1 bg-[#1a1a2e] border border-vice-cyan/50 text-vice-cyan hover:bg-vice-cyan hover:text-black transition-all rounded shadow-neon-cyan z-20 cursor-pointer"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="w-1.5 h-24 rounded-full bg-gray-600 group-hover:bg-vice-cyan group-hover:shadow-neon-cyan transition-all flex flex-col items-center justify-center gap-1">
+                <GripVertical size={14} className="text-gray-400 group-hover:text-black" />
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode('2d_only'); }}
+                className="p-1 bg-[#1a1a2e] border border-vice-cyan/50 text-vice-cyan hover:bg-vice-cyan hover:text-black transition-all rounded shadow-neon-cyan z-20 cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+
+          {/* 3D Garage Studio Viewport */}
           <div
             style={{
-              height: verticalSplitPercent === 0 ? '0%' : verticalSplitPercent === 100 ? '100%' : `${verticalSplitPercent}%`
+              width: viewMode === '3d_only' ? '100%' : viewMode === '2d_only' ? '0%' : `${100 - mainSplitPercent}%`
             }}
-            className={`w-full relative flex flex-col ${verticalSplitPercent === 0 ? 'hidden' : 'min-h-[180px] sm:min-h-[220px] shrink-0'}`}
+            className={`
+              ${show3D ? 'flex' : 'hidden'}
+              ${mobileTab === '3d' ? 'w-full flex' : 'hidden lg:flex'}
+              ${isSplitDragging ? 'pointer-events-none select-none' : ''}
+              flex-col flex-1 h-full min-w-0
+            `}
           >
-            <LiveryCanvas
-              liveryState={liveryState}
-              selectedDecalId={selectedDecalId}
-              onSelectDecal={setSelectedDecalId}
-              onUpdateDecal={handleUpdateDecal}
-              onCanvasRender={setCanvasElement}
-              onUndo={undo}
-              onRedo={redo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onOpenExportModal={() => setIsExportOpen(true)}
-            />
-          </div>
-
-          {/* DRAGGABLE VERTICAL SPLITTER (Between 2D Canvas and Toolbar/Editor) */}
-          <div
-            onPointerDown={handleStartVerticalSplitDrag}
-            onDoubleClick={() => setVerticalSplitPercent(58)}
-            title="Drag up/down to resize Canvas vs Editor (Double click to reset)"
-            className="w-full h-4 sm:h-5 bg-[#0d0d1a] hover:bg-vice-pink/30 active:bg-vice-pink/50 cursor-row-resize flex items-center justify-center transition-colors group z-10 shrink-0 select-none border-y border-vice-border touch-none gap-6"
-          >
-            <button
-              onClick={(e) => { e.stopPropagation(); setVerticalSplitPercent(0); }}
-              className="p-1 bg-[#1a1a2e] border border-vice-pink/50 text-vice-pink hover:bg-vice-pink hover:text-white transition-all rounded shadow-[0_0_8px_rgba(255,0,127,0.4)] hover:shadow-neon-pink z-20 cursor-pointer"
-              title="Collapse Canvas"
-            >
-              <ChevronUp size={14} />
-            </button>
-
-            <div className="w-20 sm:w-24 h-1.5 rounded-full bg-gray-600 group-hover:bg-vice-pink group-hover:shadow-neon-pink transition-all flex items-center justify-center">
-              <GripHorizontal size={14} className="text-gray-400 group-hover:text-white" />
-            </div>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); setVerticalSplitPercent(100); }}
-              className="p-1 bg-[#1a1a2e] border border-vice-pink/50 text-vice-pink hover:bg-vice-pink hover:text-white transition-all rounded shadow-[0_0_8px_rgba(255,0,127,0.4)] hover:shadow-neon-pink z-20 cursor-pointer"
-              title="Collapse Editor"
-            >
-              <ChevronDown size={14} />
-            </button>
-          </div>
-
-          {/* 2. 2D Toolbar / Editor Panel Section (Bottom) */}
-          <div className={`flex-1 overflow-hidden flex flex-col ${verticalSplitPercent === 100 ? 'hidden' : 'min-h-[140px] sm:min-h-[180px]'}`}>
-            <Toolbar2D
+            <GarageScene
               liveryState={liveryState}
               onUpdateState={handleUpdateLiveryState}
-              selectedDecalId={selectedDecalId}
-              onSelectDecal={setSelectedDecalId}
-              onAddDecal={handleAddDecal}
-              onUpdateDecal={handleUpdateDecal}
-              onRemoveDecal={handleRemoveDecal}
-              canvasDataUrl={canvasElement ? canvasElement.toDataURL() : ''}
-              onSaveUnlayerImage={handleSaveUnlayerImage}
+              canvasElement={canvasElement}
+              cameraPreset={cameraPreset}
+              onSelectCameraPreset={setCameraPreset}
+              quality={graphicsQuality}
+              onSelectQuality={setGraphicsQuality}
             />
           </div>
-        </div>
+        </main>
+      )}
 
-        {/* ── DRAGGABLE MAIN HORIZONTAL SPLITTER (Between 2D Suite and 3D Studio) ── */}
-        {viewMode === 'split' && (
-          <div
-            onPointerDown={handleStartMainSplitDrag}
-            onDoubleClick={() => setMainSplitPercent(50)}
-            title="Drag left/right to resize 2D Editor vs 3D Studio (Double click to reset 50/50)"
-            className="hidden lg:flex w-5 h-full bg-[#0d0d1a] hover:bg-vice-cyan/30 active:bg-vice-cyan/50 cursor-col-resize flex-col items-center justify-center transition-colors group z-20 shrink-0 select-none border-x border-vice-border mx-0.5 touch-none gap-6"
+      {/* Mobile Bottom Navigation Bar */}
+      {appMode === 'studio' && (
+        <div className="lg:hidden flex border-t border-vice-border bg-[#0b0b14]/95 backdrop-blur-md shrink-0 z-30">
+          <button
+            onClick={() => setMobileTab('2d')}
+            className={`flex-1 py-3 text-xs font-vice transition-all flex items-center justify-center gap-2 ${
+              mobileTab === '2d'
+                ? 'text-vice-pink bg-vice-card/60 font-bold border-t-2 border-vice-pink shadow-neon-pink'
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
-            <button
-              onClick={(e) => { e.stopPropagation(); setViewMode('3d_only'); }}
-              className="p-1 bg-[#1a1a2e] border border-vice-cyan/50 text-vice-cyan hover:bg-vice-cyan hover:text-black transition-all rounded shadow-[0_0_8px_rgba(0,240,255,0.4)] hover:shadow-neon-cyan z-20 cursor-pointer"
-              title="Collapse 2D Editor"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            <div className="w-1.5 h-24 rounded-full bg-gray-600 group-hover:bg-vice-cyan group-hover:shadow-neon-cyan transition-all flex flex-col items-center justify-center gap-1">
-              <GripVertical size={14} className="text-gray-400 group-hover:text-black" />
-            </div>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); setViewMode('2d_only'); }}
-              className="p-1 bg-[#1a1a2e] border border-vice-cyan/50 text-vice-cyan hover:bg-vice-cyan hover:text-black transition-all rounded shadow-[0_0_8px_rgba(0,240,255,0.4)] hover:shadow-neon-cyan z-20 cursor-pointer"
-              title="Collapse 3D Studio"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* ── SECTION 3: 3D GARAGE STUDIO VIEWPORT ── */}
-        <div
-          style={{
-            width: viewMode === '3d_only' ? '100%' : viewMode === '2d_only' ? '0%' : `${100 - mainSplitPercent}%`
-          }}
-          className={`
-            ${show3D ? 'flex' : 'hidden'}
-            ${mobileTab === '3d' ? 'w-full flex' : 'hidden lg:flex'}
-            ${isSplitDragging ? 'pointer-events-none select-none' : ''}
-            flex-col flex-1
-            h-full
-            min-w-0
-          `}
-        >
-          <GarageScene
-            liveryState={liveryState}
-            onUpdateState={handleUpdateLiveryState}
-            canvasElement={canvasElement}
-            cameraPreset={cameraPreset}
-            onSelectCameraPreset={setCameraPreset}
-            quality={graphicsQuality}
-            onSelectQuality={setGraphicsQuality}
-          />
+            <span>PAINT &amp; UNLAYER EDITOR</span>
+          </button>
+          <button
+            onClick={() => setMobileTab('3d')}
+            className={`flex-1 py-3 text-xs font-vice transition-all flex items-center justify-center gap-2 ${
+              mobileTab === '3d'
+                ? 'text-vice-cyan bg-vice-card/60 font-bold border-t-2 border-vice-cyan shadow-neon-cyan'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <span>3D GARAGE STUDIO</span>
+          </button>
         </div>
-      </main>
+      )}
 
-      {/* ── NATIVE MOBILE BOTTOM TAB BAR (below lg) ── */}
-      <div className="lg:hidden flex border-t border-vice-border bg-[#0b0b14]/95 backdrop-blur-md shrink-0 z-30">
-        <button
-          onClick={() => setMobileTab('2d')}
-          className={`flex-1 py-3 text-xs font-vice transition-all flex items-center justify-center gap-2 ${
-            mobileTab === '2d'
-              ? 'text-vice-pink bg-vice-card/60 font-bold border-t-2 border-vice-pink shadow-neon-pink'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <span>🎨</span> 2D CANVAS &amp; EDITOR
-        </button>
-        <button
-          onClick={() => setMobileTab('3d')}
-          className={`flex-1 py-3 text-xs font-vice transition-all flex items-center justify-center gap-2 ${
-            mobileTab === '3d'
-              ? 'text-vice-cyan bg-vice-card/60 font-bold border-t-2 border-vice-cyan shadow-neon-cyan'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <span>🚗</span> 3D GARAGE STUDIO
-        </button>
-      </div>
-
-      {/* BOTTOM RADIO STATION BAR */}
+      {/* Bottom Radio Station Bar */}
       <footer className="px-2 sm:px-3 pb-1.5 pt-1 shrink-0">
         <ViceRadio />
       </footer>
 
-      {/* MODALS */}
+      {/* ── MODALS ── */}
+
+      {/* Vehicle Heist Evidence Forgery Suite Modal */}
+      {activeHeistMission && (
+        <EvidenceEditorModal
+          isOpen={isEvidenceEditorOpen}
+          mission={activeHeistMission}
+          onClose={() => setIsEvidenceEditorOpen(false)}
+          onSubmitForgery={handleSubmitForgery}
+        />
+      )}
+
+      {/* Story Consequence Loop Cutscene Modal */}
+      {activeHeistMission && forgeryResult && (
+        <StoryConsequenceModal
+          isOpen={isConsequenceOpen}
+          mission={activeHeistMission}
+          result={forgeryResult}
+          onContinue={handleConsequenceContinue}
+          onRetry={() => {
+            setIsConsequenceOpen(false);
+            setIsEvidenceEditorOpen(true);
+          }}
+        />
+      )}
+
       <GaragePresetsModal
         isOpen={isPresetsOpen}
         onClose={() => setIsPresetsOpen(false)}
@@ -455,48 +496,31 @@ export const App: React.FC = () => {
         onLoadLivery={handleLoadLiveryPreset}
       />
 
-      {/* 🏎️ VICE OUTRUN HIGHWAY SPEED TRIAL ARCADE GAME */}
       <ViceOutrunGameModal
         isOpen={isGameOpen}
         onClose={() => setIsGameOpen(false)}
         liveryState={liveryState}
         canvasElement={canvasElement}
+        mission={activeHeistMission}
       />
 
-
-
-      {/* VEHICLE TRANSITION LOADER — shows briefly on vehicle switch */}
       <VehicleTransitionLoader
         isLoading={isLoadingVehicle}
         vehicle={liveryState.vehicle}
       />
 
-      {/* ONBOARDING TOUR — shows on first visit, dismissed via localStorage */}
-      <OnboardingTourModal
-        isOpen={isOnboardingOpen}
-        onClose={() => {
-          localStorage.setItem('vice_onboarded', '1');
-          setIsOnboardingOpen(false);
-        }}
-        onOpenShortcuts={() => {
-          localStorage.setItem('vice_onboarded', '1');
-          setIsOnboardingOpen(false);
-          setIsShortcutsOpen(true);
-        }}
-        onOpenExportModal={() => {
-          localStorage.setItem('vice_onboarded', '1');
-          setIsOnboardingOpen(false);
-          setIsExportOpen(true);
-        }}
+      <HeistGameTourModal
+        isOpen={isGameTourOpen}
+        onClose={() => setIsGameTourOpen(false)}
+        onStartHeist={() => setAppMode('heist')}
       />
 
-      {/* KEYBOARD SHORTCUTS MODAL — toggle with ? key */}
       <KeyboardShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
         onOpenTour={() => {
           setIsShortcutsOpen(false);
-          setIsOnboardingOpen(true);
+          setIsGameTourOpen(true);
         }}
       />
     </div>

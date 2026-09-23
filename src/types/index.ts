@@ -89,3 +89,91 @@ export interface PresetLivery {
   thumbnailUrl?: string;
   state: Partial<LiveryState>;
 }
+
+export type AppMode = 'studio' | 'heist';
+
+export type GetawayVehicleType = 'car' | 'bike' | 'train' | 'boat' | 'helicopter' | 'final';
+
+export type EditingMechanicType = 
+  | 'vehicle_disguise' 
+  | 'identity_matrix' 
+  | 'multi_image_consistency' 
+  | 'environment_context' 
+  | 'reality_check' 
+  | 'final_speed_run';
+
+export type ObjectiveCategory = 
+  | 'color_respray' 
+  | 'plate_obscure' 
+  | 'text_modify' 
+  | 'damage_repair' 
+  | 'marking_remove'
+  | 'environment_alter';
+
+export interface MissionObjective {
+  id: string;
+  category: ObjectiveCategory;
+  title: string;
+  description: string;
+  targetRegionLabel: string;
+  completed?: boolean;
+}
+
+export interface EvidencePhotoItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  svgDataUrl: string;
+  editedDataUrl?: string;
+  targetObjectiveId?: string;
+}
+
+export interface HeistMission {
+  id: string;
+  vehicleType: GetawayVehicleType;
+  mechanicType: EditingMechanicType;
+  title: string;
+  codename: string;
+  location: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT' | 'INSANE';
+  cashReward: number;
+  heatLevel: number; // 1 to 5
+  briefingText: string;
+  detectiveNote: string;
+  mechanicBadgeLabel: string;
+  mechanicDescription: string;
+  evidencePhotoTitle: string;
+  evidencePhotoSub: string;
+  evidenceCanvasSvg: string; // Default primary image
+  evidencePhotos?: EvidencePhotoItem[]; // Multi-image evidence set (for Train & Final Mission)
+  objectives: MissionObjective[];
+  initialNarrative: string;
+  successHeadline: string;
+  successNarrative: string;
+  failureNarrative: string;
+}
+
+export interface ForgeryValidationResult {
+  passed: boolean;
+  score: number; // 0 to 100
+  mechanicType: EditingMechanicType;
+  objectivesCompleted: string[];
+  feedbackNotes: string[];
+  editedImageDataUrl?: string;
+  // Car: Heat meter
+  heatLevelPct?: number;
+  // Bike: Identity breakdown matrix
+  vehicleMatchPct?: number;
+  riderMatchPct?: number;
+  colorMatchPct?: number;
+  overallIdentityPct?: number;
+  // Train: Multi-image consistency
+  consistencyScorePct?: number;
+  imageConsistencyList?: Array<{ camera: string; text: string; match: boolean }>;
+  // Boat: Environment context editing
+  environmentMatchPct?: number;
+  // Helicopter: Reality & Lighting check
+  realityCheckScorePct?: number;
+}
+
+

@@ -20,44 +20,44 @@ interface TourStep {
 
 const STEPS: TourStep[] = [
   {
-    eyebrow:  'ACT I — THE BOOST',
-    headline: 'JACKED AT\n2:00 AM.',
-    body:     'You just boosted a high-priority supercar outside the Starfish Island club. The owner spotted you and called the Vice City Police Department.',
-    tip:      'Switch your stolen chassis from the top header bar.',
+    eyebrow:  'CHAPTER 01 — VEHICLE GETAWAY SELECTION',
+    headline: 'CHOOSE YOUR\nGETAWAY RIDE.',
+    body:     'Select from 5 interconnected vehicle escape paths: Muscle Sedan, Neon Superbike, Bullet Train Engine, Offshore Powerboat, or Stealth Helicopter.',
+    tip:      'Every vehicle path features a completely different bespoke editing mechanic.',
     accent:   '#ff007f',
-    glyph:    '🚨',
+    glyph:    '01',
   },
   {
-    eyebrow:  'ACT II — THE CHOP SHOP',
-    headline: 'DISGUISE\nTHE RIDE.',
-    body:     'Head into the underground studio. Drag vinyls, decals, and body stripes onto the 2D UV blueprint in real time so the police APB description is useless.',
-    tip:      'Press F to toggle Fullscreen 2D Canvas mode.',
+    eyebrow:  'CHAPTER 02 — BESPOKE EVIDENCE FORGERY',
+    headline: 'DOCTOR THE\nSURVEILLANCE.',
+    body:     'Launch the Unlayer image editor to manipulate visual evidence photos, scrub license plates, alter vehicle disguises, and disrupt police AI scanners.',
+    tip:      'Target specific regions on the evidence photos to maximize forgery match.',
     accent:   '#00f0ff',
-    glyph:    '🎨',
+    glyph:    '02',
   },
   {
-    eyebrow:  'ACT III — 3D INSPECTION',
-    headline: 'VERIFY\nTHE HEAT.',
-    body:     'Inspect every angle in 3D 60 FPS neon HDRI. Toggle pearl clearcoats, dark limo window tints, and neon underglow to stay invisible in the night.',
-    tip:      'Press keys 1–8 for cinematic camera angles; U for underglow.',
+    eyebrow:  'CHAPTER 03 — TELEMETRY & RISK SCAN',
+    headline: 'VERIFY FORGERY\nMATCH SCORE.',
+    body:     'Validate your evidence edits against police surveillance AI. High forgery match accuracy lowers heat levels and grants tactical escape perks.',
+    tip:      'If forgery accuracy drops below 70%, police heat will spike rapidly.',
     accent:   '#ffe600',
-    glyph:    '🏎️',
+    glyph:    '03',
   },
   {
-    eyebrow:  'ACT IV — POLICE CHASE',
-    headline: 'OUTRUN\nTHE COPS.',
-    body:     'Hit the coastal highway with sirens wailing behind you. Dodge interceptors, collect Nitro bottles, trigger EMPs, and survive the 5-Star Wanted Level.',
-    tip:      'Press G anytime to launch the 3D Police Chase Escape Game.',
+    eyebrow:  'CHAPTER 04 — PURSUIT ESCAPE',
+    headline: 'ACTIVE CONTROL\n3D PURSUIT.',
+    body:     'Engage in live 3D getaway pursuits with active vehicle controls: Side-Ram police, execute EMP Wheelies, Override Rail Switches, or launch Hydro Jumps.',
+    tip:      'Watch out for vehicle-specific crash conditions and police traps.',
     accent:   '#ff3300',
-    glyph:    '🚔',
+    glyph:    '04',
   },
   {
-    eyebrow:  'ACT V — BOUNTY SCORECARD',
-    headline: 'MOST WANTED\nPOSTER.',
-    body:     'Survive the chase to bank your escape score and generate an official Vice City PD Most Wanted Certificate PNG with your custom ride render.',
-    tip:      'Save and export your liveries as JSON or HD textures anytime.',
+    eyebrow:  'CHAPTER 05 — SURVIVE OR INCIDENT REPORT',
+    headline: 'BANK ESCAPE\nOR GET BOOKED.',
+    body:     'Evade capture to clear your APB record and unlock the next heist chapter. If pitted or arrested, review your bespoke police incident report card.',
+    tip:      'Toggle between VEHICLE HEIST and GARAGE STUDIO anytime in the top header bar.',
     accent:   '#00ff99',
-    glyph:    '🏆',
+    glyph:    '05',
   },
 ];
 
@@ -244,7 +244,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                   transition: 'background 0.3s, box-shadow 0.3s',
                 }}
               >
-                {isLast ? 'OPEN EXPORT & PRINT' : 'NEXT'}
+                {isLast ? 'START VEHICLE HEIST' : 'NEXT'}
                 {!isLast && <ChevronRight size={13} />}
               </button>
             </div>

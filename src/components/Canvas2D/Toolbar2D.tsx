@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
 import { LiveryState, PaintFinish, DecalCategory, DecalLayer, WindowTint } from '../../types';
 import { DECAL_LIBRARY, DECAL_CATEGORIES } from '../../utils/decalLibrary';
 import { audioEngine } from '../../utils/audioEngine';
 import { Paintbrush, Layers, Type as TypeIcon, Sparkles, Trash2, Eye, EyeOff, ArrowUp, ArrowDown, FlipHorizontal, CloudRain, Disc, Copy, ImageIcon, X as XIcon, Maximize, Minimize } from 'lucide-react';
 import FilerobotImageEditor from '@unlayer/react-image-editor';
+
+interface EBState { hasError: boolean; }
+class UnlayerErrorBoundary extends Component<{ children: React.ReactNode; fallback: React.ReactNode }, EBState> {
+  constructor(props: any) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err: Error) { console.warn('[Unlayer] Toolbar2D Editor failed:', err.message); }
+  render() { return this.state.hasError ? this.props.fallback : this.props.children; }
+}
 
 import { useDragScroll } from '../../utils/useDragScroll';
 
@@ -729,16 +737,23 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
             )}
 
             <div className={`flex-1 w-full relative bg-black border border-vice-border rounded-xl overflow-hidden ${isUnlayerFullscreen ? '' : 'min-h-[400px]'}`}>
-              <FilerobotImageEditor
-                image={canvasDataUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="%2310101c"/><text x="512" y="512" font-size="24" fill="white" font-family="monospace" text-anchor="middle">Loading Canvas Data...</text></svg>'}
-                onSave={(res: any) => {
-                  if (res?.dataUrl && onSaveUnlayerImage) {
-                    onSaveUnlayerImage(res.dataUrl);
-                    setIsUnlayerFullscreen(false);
-                    setActiveTab('paint');
-                  }
-                }}
-              />
+              <UnlayerErrorBoundary fallback={
+                <div className="p-6 text-center text-gray-400 font-mono text-xs flex flex-col items-center justify-center h-full gap-2">
+                  <span className="text-yellow-400 font-bold">Unlayer Image Editor loading...</span>
+                  <span>Use paint, decal, and text tools to customize your livery.</span>
+                </div>
+              }>
+                <FilerobotImageEditor
+                  image={canvasDataUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="%2310101c"/><text x="512" y="512" font-size="24" fill="white" font-family="monospace" text-anchor="middle">Loading Canvas Data...</text></svg>'}
+                  onSave={(res: any) => {
+                    if (res?.dataUrl && onSaveUnlayerImage) {
+                      onSaveUnlayerImage(res.dataUrl);
+                      setIsUnlayerFullscreen(false);
+                      setActiveTab('paint');
+                    }
+                  }}
+                />
+              </UnlayerErrorBoundary>
             </div>
           </div>
         )}

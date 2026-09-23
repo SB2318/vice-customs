@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { LiveryState, VehicleModel, ViewMode } from '../../types';
+import { LiveryState, VehicleModel, ViewMode, AppMode } from '../../types';
 import { audioEngine } from '../../utils/audioEngine';
-import { Flame, Sparkles, Download, Menu, X, Undo2, Redo2, Volume2, VolumeX, Gamepad2 } from 'lucide-react';
+import { Flame, Sparkles, Download, Menu, X, Undo2, Redo2, Volume2, VolumeX, ShieldAlert, Car } from 'lucide-react';
 import { useDragScroll } from '../../utils/useDragScroll';
 
 interface HeaderProps {
@@ -9,9 +9,11 @@ interface HeaderProps {
   onUpdateState: (updates: Partial<LiveryState>) => void;
   viewMode: ViewMode;
   onSelectViewMode: (mode: ViewMode) => void;
+  appMode: AppMode;
+  onSelectAppMode: (mode: AppMode) => void;
   onOpenPresetsModal: () => void;
   onOpenExportModal: () => void;
-  onOpenGameModal?: () => void;
+  onOpenTour?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -23,14 +25,17 @@ export const Header: React.FC<HeaderProps> = ({
   onUpdateState,
   viewMode,
   onSelectViewMode,
+  appMode,
+  onSelectAppMode,
   onOpenPresetsModal,
   onOpenExportModal,
-  onOpenGameModal,
+  onOpenTour,
   onUndo,
   onRedo,
   canUndo,
   canRedo,
 }) => {
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRevving, setIsRevving] = useState(false);
   const [isMuted, setIsMuted] = useState(() => audioEngine.getIsMuted());
@@ -84,50 +89,86 @@ export const Header: React.FC<HeaderProps> = ({
                 VICE CUSTOMS
               </h1>
               <p className="hidden 2xl:block text-[8px] font-vice text-gray-400 tracking-widest uppercase">
-                GTA VI CAR LIVERY STUDIO
+                VEHICLE HEIST EDITION
               </p>
             </div>
           </div>
 
           <div className="hidden sm:block w-[1px] h-5 bg-gray-800 mx-0.5" />
 
-          {/* VEHICLE MODEL SELECTOR - Desktop Pills */}
-          <div className="hidden sm:flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shrink-0 shadow-md">
-            {vehicles.map((vm) => (
-              <button
-                key={vm}
-                onClick={() => {
-                  onUpdateState({ vehicle: vm });
-                  audioEngine.playClickSFX();
-                }}
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-vice uppercase transition-all whitespace-nowrap ${
-                  liveryState.vehicle === vm
-                    ? 'bg-vice-pink text-white font-bold shadow-neon-pink'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {vm}
-              </button>
-            ))}
+          {/* DUAL MODE TOGGLE BUTTONS (GARAGE STUDIO vs VEHICLE HEIST FOCUSABLE) */}
+          <div className="flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shrink-0 shadow-md">
+            <button
+              onClick={() => {
+                audioEngine.playTransitionSFX();
+                onSelectAppMode('studio');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1.5 ${
+                appMode === 'studio'
+                  ? 'bg-gradient-to-r from-vice-pink to-purple-600 text-white shadow-neon-pink'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Car size={13} /> GARAGE
+            </button>
+            <button
+              onClick={() => {
+                audioEngine.playTransitionSFX();
+                onSelectAppMode('heist');
+              }}
+              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1.5 ${
+                appMode === 'heist'
+                  ? 'bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white shadow-neon-cyan ring-2 ring-pink-500/60'
+                  : 'text-pink-400 bg-pink-950/30 border border-pink-500/40 hover:text-white hover:bg-pink-900/50'
+              }`}
+            >
+              <ShieldAlert size={13} className="text-pink-400 animate-pulse" /> VEHICLE HEIST
+            </button>
           </div>
 
-          {/* VEHICLE MODEL SELECTOR - Mobile Dropdown */}
-          <div className="sm:hidden">
-            <select
-              value={liveryState.vehicle}
-              onChange={(e) => {
-                onUpdateState({ vehicle: e.target.value as VehicleModel });
-                audioEngine.playClickSFX();
-              }}
-              className="bg-[#121224] text-vice-pink border border-vice-border rounded-lg px-2 py-1 text-xs font-vice uppercase font-bold focus:outline-none"
-            >
+          <div className="hidden lg:block w-[1px] h-5 bg-gray-800 mx-0.5" />
+
+          {/* VEHICLE MODEL SELECTOR - Desktop Pills (only in studio mode) */}
+          {appMode === 'studio' && (
+            <div className="hidden lg:flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shrink-0 shadow-md">
               {vehicles.map((vm) => (
-                <option key={vm} value={vm} className="bg-[#121224] text-white">
-                  🚗 {vm}
-                </option>
+                <button
+                  key={vm}
+                  onClick={() => {
+                    onUpdateState({ vehicle: vm });
+                    audioEngine.playClickSFX();
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-vice uppercase transition-all whitespace-nowrap ${
+                    liveryState.vehicle === vm
+                      ? 'bg-vice-pink text-white font-bold shadow-neon-pink'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {vm}
+                </button>
               ))}
-            </select>
-          </div>
+            </div>
+          )}
+
+          {/* VEHICLE MODEL SELECTOR - Mobile Dropdown */}
+          {appMode === 'studio' && (
+            <div className="lg:hidden">
+              <select
+                value={liveryState.vehicle}
+                onChange={(e) => {
+                  onUpdateState({ vehicle: e.target.value as VehicleModel });
+                  audioEngine.playClickSFX();
+                }}
+                className="bg-[#121224] text-vice-pink border border-vice-border rounded-lg px-2 py-1 text-xs font-vice uppercase font-bold focus:outline-none"
+              >
+                {vehicles.map((vm) => (
+                  <option key={vm} value={vm} className="bg-[#121224] text-white">
+                    {vm}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* ── CENTER SECTION: UNDO / REDO & VIEW MODE ── */}
@@ -197,18 +238,7 @@ export const Header: React.FC<HeaderProps> = ({
             REV!
           </button>
 
-          {/* 🚔 REAL 3D GTA HEIST POLICE CHASE ESCAPE */}
-          {onOpenGameModal && (
-            <button
-              onClick={onOpenGameModal}
-              className="px-3 py-1.5 bg-gradient-to-r from-red-600/40 via-purple-600/40 to-blue-600/40 hover:from-red-600 hover:to-blue-600 text-white font-vice text-[11px] font-black rounded-xl border border-red-500/60 shadow-neon-pink/40 hover:shadow-neon-pink transition-all flex items-center gap-1.5 whitespace-nowrap hover:scale-105 active:scale-95 shrink-0"
-              title="Launch 3D GTA Police Chase Escape Game (G)"
-            >
-              <span className="text-sm animate-pulse">🚔</span>
-              <span>HEIST ESCAPE</span>
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping ml-0.5" />
-            </button>
-          )}
+
 
           {/* Presets */}
           <button
@@ -299,14 +329,6 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action buttons */}
           <div className="grid grid-cols-2 gap-2 pt-1">
-            {onOpenGameModal && (
-              <button
-                onClick={() => { onOpenGameModal(); setMenuOpen(false); }}
-                className="py-2 bg-gradient-to-r from-red-600/30 to-blue-600/30 border border-red-500/50 text-white font-vice text-xs font-black rounded-xl flex items-center justify-center gap-1.5 shadow-neon-pink/40"
-              >
-                <span>🚔</span> HEIST ESCAPE
-              </button>
-            )}
             <button
               onClick={handleRevEngine}
               className="py-2 bg-gradient-to-r from-vice-orange to-red-600 text-white font-vice text-xs font-black rounded-xl flex items-center justify-center gap-1.5 border border-yellow-400/40"
