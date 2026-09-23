@@ -1,4 +1,4 @@
-# 🌴 Vice Customs — GTA VI-Inspired Car Livery Studio
+# Vice Customs — GTA VI-Inspired Car Livery Studio
 
 > **Built for the [#BuiltWithImageEditor](https://www.linkedin.com/search/results/all/?keywords=%23builtwithimageeditor) Challenge by Unlayer** · Submission deadline: September 24, 2026
 
@@ -11,86 +11,73 @@
 
 ---
 
-## 🎮 What is Vice Customs?
+## What is Vice Customs?
 
-**Vice Customs** is a full-featured, GTA VI-inspired **car livery & decal customization studio** — think *Los Santos Customs* meets *Vice City* neon fever dream, running entirely in your browser.
+**Vice Customs** is a full-featured, GTA VI-inspired **car livery and decal customization studio** — combining high-performance WebGL 3D rendering with native image editing, running entirely in your browser.
 
-Players design custom vehicle paint wraps on a 2D canvas editor (powered by **Unlayer React Image Editor**), and see their creation **mapped in real-time onto a 3D car model** inside a neon-soaked, rain-drenched synthwave garage. Add decals, rev the engine, trigger exhaust flames, crank up the Vice Radio, and export a studio-quality PNG — all without leaving the browser.
+Players design custom vehicle paint wraps on a 2D canvas suite (powered by **Unlayer React Image Editor** and custom 2D UV texture tools), and see their creation **mapped in real-time onto a 3D car model** inside dynamic 3D environments. Add decals, rev the V8 engine, trigger exhaust flames, cycle retro synthwave radio stations, and export print-ready 1024x1024 UV textures and 3D renders.
 
 ---
 
-## 🏆 Challenge Requirements Met
+## Challenge Requirements Met
 
 | Requirement | Status |
 |---|---|
-| GTA VI-inspired experience | ✅ Vice City neon garage, car customization, synthwave radio |
-| React Image Editor as a core part | ✅ `@unlayer/react-image-editor` — full image editing modal for custom livery artwork |
-| Users can edit / customize at least one visual | ✅ Full 2D texture canvas + Unlayer editor → live 3D car skin |
-| Public GitHub repository | ✅ This repo |
-| Deployed project | ✅ See **Live Demo** link below |
+| GTA VI-inspired experience | Complete — Vice City garage aesthetics, vehicle customization, synthwave radio, 3D environments |
+| React Image Editor as a core part | Complete — `@unlayer/react-image-editor` natively embedded inside the 2D suite with full-screen expansion |
+| Users can edit / customize visual assets | Complete — Full 2D texture canvas and Unlayer editor composited to live 3D vehicle skins |
+| Public GitHub repository | Complete — Source code hosted in this repository |
+| Deployed project | Complete — Production build deployed |
 
 ---
 
-## ✨ Features
+## Key Integrations & Features
 
-### 🎨 2D Livery Canvas (Core Customization)
-- **Paint & Finish** — Primary body color, dual-tone secondary coat, finish materials: Gloss, Matte, Metallic, Pearlescent, Chameleon Iridescent, Carbon Fiber, Rust Patina
-- **Decals Studio** — Racing stripes, retro hot-rod flames, cyberpunk neon wings, spray stencils, GTA-style sponsor logos (Pegassi, Grotti, Sprunk, eCola), bullet holes & scratch damage marks
-- **Text & License Plates** — Custom typography (Orbitron, Impact, 8-Bit Arcade), Vice City license plate designer (Sunset Pink, Blue/Yellow, Outlaw Black & Gold)
-- **1-Click Mirror** — Mirror any decal to the opposite side of the vehicle instantly
-- **Multi-Touch Gestures** — 2-finger pinch to scale, 2-finger rotate, and drag to position decals on mobile & tablets
-- **On-Canvas Floating HUD** — Zoom In/Out, Reset View, UV Guide toggle, and instant Undo/Redo controls
+### Embedded Unlayer Image Editor Integration
+- **Native Suite Embedding** — Embedded as a primary tab inside the 2D suite for seamless workflow without intrusive modal popups.
+- **Full-Screen Maximize / Minimize** — One-click expand button allows users to toggle fullscreen canvas editing mode.
+- **Live Texture Compositing** — Saved Unlayer artwork composites directly as a base layer on the 1024x1024 UV canvas map below decals.
+- **Full Editing Toolset** — Advanced filters, cropping, stickers, shape tools, text annotations, and freehand drawing.
 
-### ⚡ Undo / Redo History Engine
-- 40-step non-destructive history stack for all paints, decals, materials, and tuning
-- Full keyboard shortcut support: `Ctrl+Z` / `Cmd+Z` (Undo), `Ctrl+Y` / `Cmd+Shift+Z` (Redo)
-- Dedicated Header & Canvas HUD buttons
+### 4 Dynamic 3D Scene Environments & Weather Studio
+- **Studio Mode** — High-gloss studio lighting setup with classic pink/cyan neon tube accents.
+- **Rain & Thunderstorm Mode** — GPU particle rain system, wet floor puddle reflections, storm lighting, and random procedural white lightning flashes.
+- **Synthwave Sunset Mode** — Purple-tinted outrun atmosphere featuring an animated retro horizon sun with horizontal slats, golden rim lights, and enhanced reflections.
+- **Cyberpunk Night Mode** — Deep green atmospheric fog, green/cyan neon accents, and rising Matrix-style spark particles.
 
-### 🌐 Save, Load, Cloud Share & JSON System
-- **1-Click Shareable Link** — Encodes full livery state into compact URL hash (`#share=...`) to share exact builds across devices
-- **JSON Export / Import** — Download `.json` livery config files or upload existing configs
-- **LocalStorage Multi-Slot Garage** — Store named custom vehicle builds in browser storage with timestamps
+### 2D Livery Canvas & Decal Studio
+- **Paint & Finishes** — Primary body color, dual-tone secondary accenting, and physical finish materials (Gloss, Matte, Metallic, Pearlescent, Chameleon Iridescent, Carbon Fiber, Rust Patina).
+- **Decal Library** — Racing stripes, flames, stencils, sponsor logos (Pegassi, Grotti, Sprunk, eCola), bullet holes, and scratch damage.
+- **Custom License Plates** — Custom typography and plate styles (Sunset Pink, Blue/Yellow, Outlaw Black & Gold).
+- **Touch & Gesture Support** — Multi-touch pinch-to-scale, rotate, and drag gestures for mobile devices and tablets.
+- **UV Telemetry Bar** — Live X/Y pixel telemetry, UV coordinate tracking, and panel region identification.
 
-### 🖌️ Unlayer React Image Editor Integration
-- Launched via the **🖌️ UNLAYER EDITOR** button in the header
-- Full image editing suite: crop, filters, adjustments, shapes, freehand draw, stickers, annotations
-- **Save inside Unlayer** → artwork is applied directly onto the live 3D vehicle texture in real time
+### Responsive Mobile & Viewport Architecture
+- **100dvh Dynamic Viewport** — Fully responsive container layout utilizing Dynamic Viewport Height (`100dvh`) to prevent address bar scrolling on iOS Safari and Android Chrome.
+- **Native Bottom Navigation Bar** — Mobile thumb-friendly bottom bar for toggling between 2D Canvas and 3D Studio views on screens under 1024px width.
+- **Non-Overlapping 3D HUD** — Flex overlay structure ensuring 3D title badges, camera presets, and theme selectors never overlap on mobile viewports.
+- **Drag-to-Scroll Containers** — Click-and-drag panning on horizontal tab bars for desktop mouse users alongside native mobile touch support.
 
-### 🚗 Live 3D Garage Renderer (Three.js / React Three Fiber / HDRI)
-- **4 vehicle models**: Vice Infernus, Banshee GTS, Dominator Muscle, Street Demon Dirtbike
-- **`MeshPhysicalMaterial`** — Photorealistic clearcoat, metallic gloss, iridescence (for chameleon & pearlescent), and physical glass windows
-- **Drei HDRI Environment Map** — Studio reflections on car paint and rims
-- **Graphics Quality Toggle** — `HIGH` (2x DPR + shadows + reflections), `MED` (1.5x DPR), `LOW` (1x DPR for mobile battery)
-- **Smooth Camera Presets** — Lerped transitions between `3/4 Front`, `Front`, `Side`, `Rear`, `Top`, `Rims/Wheel`, `Spin 🔄`, and `Cinematic 🎬`
-- **Neon Underglow** — animated cyan/pink pulsing light bars
-- **3D Exhaust Flames** — cone mesh + dynamic point lights burst from exhaust pipes on rev
-- **Rainy Vice City Mode** — GPU particle rain system, wet reflective floor, storm atmosphere
+### Unified Web Audio Engine & Mute Control
+- **Global Audio Mute Switch** — Header volume control (`Volume2` / `VolumeX`) synced across engine revs, exhaust backfire SFX, UI transition clicks, and radio playback.
+- **Procedural Engine V8 Audio** — Web Audio API synthesized V8 rumble, turbo whistle spooling, blow-off valve hiss, and exhaust flame pops.
+- **Vice Radio Synthwave** — 4 generative audio channels: FLASH FM, WAVE 103, V-ROCK, and WILDSTYLE.
 
-### 🎵 Web Audio Synthwave Engine
-- Procedurally synthesized engine rev, turbo whine, blow-off valve hiss, backfire pops
-- 4 Vice Radio stations: **FLASH FM**, **WAVE 103**, **V-ROCK**, **WILDSTYLE** — generative retro synthwave music
-- Click SFX on every UI interaction
-
-### 🏎️ Tuning Suite
-- **Rim Color Picker** — Full hex color custom metallic rims
-- **Window Tint Film** — Clear, Dark Limo, Pink Neon, Cyan Neon
-- **Spoiler & Body Kit** styles
-
-### 📤 Export Studio
-- **2D UV Texture PNG** — 1024×1024 high-res unwrapped livery texture
-- **3D Studio Screenshot PNG** — Full-res WebGL canvas snapshot of the garage viewport
-- **Save to Garage** — Persist livery configurations to browser `localStorage`
-- **Load Presets** — Iconic ready-made liveries: Neon Strike, Retro Sunset, Carbon Ghost, Cyber Drift
+### Ready to Print Export & Garage System
+- **1024x1024 2D UV Texture Export** — Actionable print-ready PNG download for game mods and texture mapping.
+- **3D Studio Render Snapshot** — High-resolution WebGL viewport render export.
+- **JSON Livery Backup & Import** — Download complete vehicle state configs as `.json` files or restore previously saved configurations.
+- **LocalStorage Garage Slots** — Save named vehicle builds to browser storage.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | UI Framework | React 18 + TypeScript |
 | Build Tool | Vite 5 |
-| Styling | Tailwind CSS 3 + custom Vice City neon theme |
+| Styling | Tailwind CSS 3 |
 | 3D Renderer | Three.js + `@react-three/fiber` v8 + `@react-three/drei` |
 | Image Editor | **`@unlayer/react-image-editor`** |
 | Audio | Web Audio API (procedural synthesis) |
@@ -99,7 +86,7 @@ Players design custom vehicle paint wraps on a 2D canvas editor (powered by **Un
 
 ---
 
-## 🚀 Run Locally
+## Run Locally
 
 ### Prerequisites
 
@@ -120,21 +107,21 @@ cd automatic-bassoon
 
 ### 2. Install Dependencies
 
-> ⚠️ **Must use `--legacy-peer-deps`** — `@react-three/fiber` has a peer dependency conflict with React 19 (npm's default). This flag resolves it without downgrading.
+> Note: Must use `--legacy-peer-deps` due to `@react-three/fiber` peer dependency compatibility with React 19 defaults.
 
 ```bash
 npm install --legacy-peer-deps
 ```
 
-### 3. Start the Development Server
+### 3. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-Open your browser at **`http://localhost:5173`** (or the port Vite prints in the terminal).
+Open browser at `http://localhost:5173`.
 
-### 4. Production Build (Optional)
+### 4. Production Build
 
 ```bash
 npm run build
@@ -143,87 +130,71 @@ npm run preview
 
 ---
 
-## 🌐 Deploy to Vercel
+## Deploy to Vercel
 
-### Method A — Deploy via GitHub (Recommended, ~2 minutes)
-
-1. Push your code to GitHub:
+1. Push code to GitHub:
    ```bash
    git add .
-   git commit -m "chore: ready for Vercel deploy"
+   git commit -m "chore: ready for deployment"
    git push origin main
    ```
-2. Go to **[vercel.com/new](https://vercel.com/new)** → **Import** your GitHub repo.
+2. Go to `vercel.com/new` and import the repository.
 3. Configure build settings:
-   | Setting | Value |
-   |---|---|
-   | Framework Preset | `Vite` |
-   | Build Command | `npm run build` |
-   | Output Directory | `dist` |
-   | Install Command | `npm install --legacy-peer-deps` |
-4. Click **Deploy** — your live URL is ready in ~60 seconds!
-
-### Method B — Deploy via Vercel CLI
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy to production
-vercel --prod
-```
-
-> The included `vercel.json` already handles SPA client-side routing rewrites — no extra config needed.
+   - Framework Preset: `Vite`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install --legacy-peer-deps`
+4. Click **Deploy**.
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 automatic-bassoon/
 ├── src/
-│   ├── App.tsx                         # Root state manager & layout
+│   ├── App.tsx                         # Root state manager & responsive layout
 │   ├── components/
 │   │   ├── Canvas2D/
-│   │   │   ├── LiveryCanvas.tsx        # 2D decal canvas renderer
-│   │   │   ├── Toolbar2D.tsx           # Paint, Decals, Text, Tuning tabs
-│   │   │   └── UnlayerEditorModal.tsx  # @unlayer/react-image-editor wrapper
+│   │   │   ├── LiveryCanvas.tsx        # 2D decal canvas & UV print trigger
+│   │   │   └── Toolbar2D.tsx           # Paint, Decals, Tuning & Unlayer Editor
 │   │   ├── Three3D/
-│   │   │   ├── GarageScene.tsx         # R3F Canvas, rain FX, lighting
-│   │   │   └── Vehicle3D.tsx           # 3D car mesh, texture, flames, rims
+│   │   │   ├── GarageScene.tsx         # R3F Canvas, 3D environments, lightning FX
+│   │   │   └── Vehicle3D.tsx           # 3D car mesh, materials, exhaust flames
 │   │   └── UI/
-│   │       ├── Header.tsx              # Vehicle selector, action buttons
-│   │       ├── ExportModal.tsx         # Download 2D/3D + save to garage
-│   │       └── PresetModal.tsx         # Preset livery loader
+│   │       ├── Header.tsx              # Vehicle selector, audio mute, view mode
+│   │       ├── ExportModal.tsx         # Ready to Print UV & 3D render export
+│   │       ├── PresetModal.tsx         # Preset livery loader
+│   │       └── ViceRadio.tsx           # Synthwave radio player component
 │   ├── utils/
-│   │   ├── decalLibrary.ts             # SVG decal path library
-│   │   ├── audioEngine.ts              # Web Audio synthesizer + radio
-│   │   └── presetLiveries.ts           # Pre-built livery configurations
+│   │   ├── decalLibrary.ts             # Decals library definitions
+│   │   ├── audioEngine.ts              # Web Audio synthesizer & mute state
+│   │   ├── useDragScroll.ts            # Mouse drag-to-scroll utility hook
+│   │   └── presetLiveries.ts           # Pre-built vehicle liveries
 │   └── types/
 │       └── index.ts                    # TypeScript types for LiveryState
-├── vercel.json                         # Vercel SPA rewrite rules
+├── vercel.json                         # Vercel SPA routing configuration
 └── README.md
 ```
 
 ---
 
-## 🎯 How to Use (5-Minute Walkthrough)
+## How to Use
 
-1. **Choose your car** — Click `INFERNUS`, `BANSHEE`, `DOMINATOR`, or `DIRTBIKE` in the header. The 3D garage model swaps instantly.
-2. **Paint it** — Go to **Paint & Finish** → pick body color, secondary coat, and finish material.
-3. **Add decals** — Go to **Decals Studio** → click any decal to place it. Drag, scale, and rotate it on the canvas.
-4. **Open Unlayer Editor** — Click **🖌️ UNLAYER EDITOR** in the header → design custom artwork → click Save to apply it to the car.
-5. **Rev the engine** — Click **REV ENGINE!** to trigger exhaust flames, V8 roar, and turbo sounds.
-6. **Enable rain** — Go to **Tuning & Rain** → toggle **RAIN ON 🌧️** for a stormy Vice City atmosphere.
-7. **Spin & shoot** — Click **🔄 Spin** to rotate the car 360°, or switch camera presets.
-8. **Export** — Click **EXPORT** → download your 2D UV texture or 3D studio screenshot.
-
----
-
-## 📄 License
-
-MIT — feel free to fork, remix, and build upon this.
+1. **Select Vehicle** — Choose Infernus, Banshee, Dominator, or Dirtbike in the header bar or mobile dropdown.
+2. **Apply Base Paint & Finishes** — Select primary color, secondary accent coat, and finish materials (Gloss, Matte, Chameleon, Carbon Fiber).
+3. **Add Decals** — Choose decals from the library, drag to position, scale, and rotate on the 2D canvas.
+4. **Use Unlayer Image Editor** — Switch to the Unlayer Editor tab in the 2D suite to draw, apply filters, or add custom graphics, then save to composite onto the car.
+5. **Switch 3D Scene Environments** — Toggle between Studio, Rain & Thunderstorm, Synthwave Sunset, and Cyberpunk Night right from the 3D HUD.
+6. **Rev Engine & Radio** — Click REV for engine sounds and exhaust flames, or switch Vice Radio stations. Use the header volume icon to mute/unmute all audio.
+7. **Export & Print** — Click "READY TO PRINT" or "EXPORT" to download high-resolution 1024x1024 UV textures, 3D renders, and JSON preset backups.
 
 ---
 
-*Submitted to the [Build with React Image Editor Challenge](https://lnkd.in/eEE_bKHc) by Unlayer · [#BuiltWithImageEditor](https://www.linkedin.com/search/results/all/?keywords=%23builtwithimageeditor)*
+## License
+
+MIT License.
+
+---
+
+*Submitted to the Build with React Image Editor Challenge by Unlayer.*

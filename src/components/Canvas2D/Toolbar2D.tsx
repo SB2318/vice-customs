@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { LiveryState, PaintFinish, DecalCategory, DecalLayer, WindowTint } from '../../types';
 import { DECAL_LIBRARY, DECAL_CATEGORIES } from '../../utils/decalLibrary';
 import { audioEngine } from '../../utils/audioEngine';
-import { Paintbrush, Layers, Type as TypeIcon, Sparkles, Trash2, Eye, EyeOff, ArrowUp, ArrowDown, FlipHorizontal, CloudRain, Disc, Copy } from 'lucide-react';
+import { Paintbrush, Layers, Type as TypeIcon, Sparkles, Trash2, Eye, EyeOff, ArrowUp, ArrowDown, FlipHorizontal, CloudRain, Disc, Copy, ImageIcon, X as XIcon, Maximize, Minimize } from 'lucide-react';
+import FilerobotImageEditor from '@unlayer/react-image-editor';
+
+import { useDragScroll } from '../../utils/useDragScroll';
 
 interface Toolbar2DProps {
   liveryState: LiveryState;
@@ -12,6 +15,8 @@ interface Toolbar2DProps {
   onAddDecal: (decal: Partial<DecalLayer>) => void;
   onUpdateDecal: (id: string, updates: Partial<DecalLayer>) => void;
   onRemoveDecal: (id: string) => void;
+  canvasDataUrl?: string;
+  onSaveUnlayerImage?: (dataUrl: string) => void;
 }
 
 const PRIMARY_PALETTE = [
@@ -31,12 +36,19 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
   onSelectDecal,
   onAddDecal,
   onUpdateDecal,
-  onRemoveDecal
+  onRemoveDecal,
+  canvasDataUrl,
+  onSaveUnlayerImage,
 }) => {
-  const [activeTab, setActiveTab] = useState<'paint' | 'decals' | 'text' | 'tuning' | 'layers'>('paint');
+  const [activeTab, setActiveTab] = useState<'paint' | 'decals' | 'text' | 'tuning' | 'layers' | 'image'>('paint');
+  const [isUnlayerFullscreen, setIsUnlayerFullscreen] = useState(false);
   const [decalCategory, setDecalCategory] = useState<DecalCategory>('stripe');
+  
+  const tabDrag = useDragScroll();
 
   // Custom Text & Plate inputs
+  // ...
+
   const [customTextVal, setCustomTextVal] = useState('VICE CITY');
   const [textFont, setTextFont] = useState('Orbitron');
   const [textColor, setTextColor] = useState('#ffffff');
@@ -131,7 +143,14 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
   return (
     <div className="w-full h-full flex flex-col bg-[#10101c] border border-vice-border rounded-xl overflow-hidden shadow-2xl">
       {/* TABS NAVIGATION */}
-      <div className="flex bg-[#0b0b14] border-b border-vice-border overflow-x-auto scrollbar-none">
+      <div 
+        ref={tabDrag.scrollRef}
+        onMouseDown={tabDrag.onMouseDown}
+        onMouseLeave={tabDrag.onMouseLeave}
+        onMouseUp={tabDrag.onMouseUp}
+        onMouseMove={tabDrag.onMouseMove}
+        className="flex bg-[#0b0b14] border-b border-vice-border overflow-x-auto custom-scrollbar pb-1 cursor-grab"
+      >
         <button
           onClick={() => { setActiveTab('paint'); audioEngine.playClickSFX(); }}
           className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
@@ -186,10 +205,21 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         >
           <Layers size={15} /> Layers ({liveryState.decals.length})
         </button>
+
+        <button
+          onClick={() => { setActiveTab('image'); audioEngine.playClickSFX(); }}
+          className={`px-3 py-3 flex items-center justify-center gap-1.5 text-[11px] font-vice transition-all whitespace-nowrap ${
+            activeTab === 'image'
+              ? 'bg-vice-card text-[#39ff14] border-b-2 border-[#39ff14] shadow-neon-green'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <ImageIcon size={15} /> Unlayer Editor
+        </button>
       </div>
 
       {/* TAB CONTENT AREA */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-5 custom-scrollbar">
+      <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-5 custom-scrollbar">
         {/* --- TAB 1: PAINT & FINISH --- */}
         {activeTab === 'paint' && (
           <div className="space-y-4">
@@ -275,6 +305,7 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
                 ))}
               </div>
             </div>
+
           </div>
         )}
 
@@ -426,28 +457,43 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         {/* --- TAB 4: TUNING & WEATHER STUDIO --- */}
         {activeTab === 'tuning' && (
           <div className="space-y-6">
-            {/* Rainy Cyberpunk Weather Mode Toggle */}
-            <div className="bg-[#141424] p-4 rounded-xl border border-vice-cyan shadow-neon-cyan/40 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CloudRain className="text-vice-cyan" size={24} />
-                <div>
-                  <h4 className="text-xs font-vice text-white">RAINY VICE NIGHT ATMOSPHERE</h4>
-                  <p className="text-[10px] text-gray-400">3D rain particles, wet floor puddles & storm lighting</p>
-                </div>
+            {/* ── SCENE ENVIRONMENT MODE ── */}
+            <div className="bg-[#141424] p-4 rounded-xl border border-vice-border space-y-3">
+              <label className="text-xs font-vice text-white flex items-center gap-2 font-bold">
+                <span className="w-2 h-2 rounded-full bg-vice-pink shadow-neon-pink" />
+                SCENE ENVIRONMENT
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { id: 'studio',    icon: '🏢', label: 'STUDIO',    color: 'border-gray-500 text-gray-300' },
+                  { id: 'rain',      icon: '🌧️', label: 'RAIN',      color: 'border-vice-cyan text-vice-cyan' },
+                  { id: 'synthwave', icon: '🌅', label: 'SYNTHWAVE', color: 'border-vice-pink text-vice-pink' },
+                  { id: 'cyberpunk', icon: '⚡', label: 'CYBERPUNK', color: 'border-[#39ff14] text-[#39ff14]' },
+                ] as const).map(env => {
+                  const current = liveryState.sceneEnvironment || (liveryState.isRainyWeather ? 'rain' : 'studio');
+                  const isActive = current === env.id;
+                  return (
+                    <button
+                      key={env.id}
+                      onClick={() => {
+                        onUpdateState({
+                          sceneEnvironment: env.id,
+                          isRainyWeather: env.id === 'rain',
+                        });
+                        audioEngine.playClickSFX();
+                      }}
+                      className={`py-2.5 px-3 rounded-xl text-[11px] font-vice font-bold border transition-all flex items-center gap-2 ${
+                        isActive
+                          ? `${env.color} bg-white/5 shadow-lg`
+                          : 'border-gray-700 text-gray-500 hover:text-white bg-[#1a1a2e]'
+                      }`}
+                    >
+                      <span className="text-base leading-none">{env.icon}</span>
+                      {env.label}
+                    </button>
+                  );
+                })}
               </div>
-              <button
-                onClick={() => {
-                  onUpdateState({ isRainyWeather: !liveryState.isRainyWeather });
-                  audioEngine.playClickSFX();
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-vice font-bold border transition-all ${
-                  liveryState.isRainyWeather
-                    ? 'bg-vice-cyan text-black border-vice-cyan shadow-neon-cyan'
-                    : 'bg-[#1a1a2e] text-gray-400 border-gray-700'
-                }`}
-              >
-                {liveryState.isRainyWeather ? 'RAIN ON 🌧️' : 'OFF'}
-              </button>
             </div>
 
             {/* Rim Color Selector */}
@@ -630,6 +676,59 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB 6: ADVANCED IMAGE EDITOR (UNLAYER) --- */}
+        {activeTab === 'image' && (
+          <div className={
+            isUnlayerFullscreen
+              ? "fixed inset-0 z-[100] bg-[#070710]/95 backdrop-blur-md flex flex-col p-2 sm:p-4 animate-fadeIn"
+              : "h-full flex flex-col space-y-3 relative"
+          }>
+            <div className={`bg-[#141424] p-3 rounded-xl border border-vice-border flex items-start gap-3 ${isUnlayerFullscreen ? 'mb-4' : ''}`}>
+              <div className="p-2 bg-[#39ff14]/20 border border-[#39ff14] text-[#39ff14] rounded-lg">
+                <ImageIcon size={18} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xs font-vice text-white">ADVANCED UNLAYER EDITOR</h3>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Use the integrated Filerobot editor to draw shapes, apply filters, and freehand paint over your current base layers. Saves as a static overlay underneath your decals.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsUnlayerFullscreen(!isUnlayerFullscreen)}
+                className="p-2 bg-[#1a1a2e] hover:bg-white/10 text-[#39ff14] hover:text-white rounded-lg transition-colors border border-vice-border flex items-center justify-center shrink-0 shadow-neon-green"
+                title={isUnlayerFullscreen ? "Exit Fullscreen" : "Expand to Fullscreen"}
+              >
+                {isUnlayerFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            </div>
+            
+            {/* Clear Advanced Overlay */}
+            {liveryState.unlayerOverlayUrl && !isUnlayerFullscreen && (
+              <div className="bg-[#141424] p-3 rounded-xl border border-vice-border">
+                <button
+                  onClick={() => onUpdateState({ unlayerOverlayUrl: undefined })}
+                  className="w-full py-2 bg-red-500/20 text-red-400 hover:bg-red-500/40 hover:text-white border border-red-500/50 rounded-lg text-xs font-vice transition-all flex items-center justify-center gap-2"
+                >
+                  <XIcon size={14} /> Clear Advanced Overlay
+                </button>
+              </div>
+            )}
+
+            <div className={`flex-1 w-full relative bg-black border border-vice-border rounded-xl overflow-hidden ${isUnlayerFullscreen ? '' : 'min-h-[400px]'}`}>
+              <FilerobotImageEditor
+                image={canvasDataUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="%2310101c"/><text x="512" y="512" font-size="24" fill="white" font-family="monospace" text-anchor="middle">Loading Canvas Data...</text></svg>'}
+                onSave={(res: any) => {
+                  if (res?.dataUrl && onSaveUnlayerImage) {
+                    onSaveUnlayerImage(res.dataUrl);
+                    setIsUnlayerFullscreen(false);
+                    setActiveTab('paint');
+                  }
+                }}
+              />
             </div>
           </div>
         )}

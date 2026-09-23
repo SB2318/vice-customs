@@ -10,8 +10,10 @@ import { Toolbar2D } from './components/Canvas2D/Toolbar2D';
 import { GarageScene } from './components/Three3D/GarageScene';
 import { GaragePresetsModal } from './components/UI/GaragePresetsModal';
 import { ExportModal } from './components/UI/ExportModal';
-import { UnlayerEditorModal } from './components/Canvas2D/UnlayerEditorModal';
-import { GripVertical, GripHorizontal } from 'lucide-react';
+import { VehicleTransitionLoader } from './components/UI/VehicleTransitionLoader';
+import { OnboardingTourModal } from './components/UI/OnboardingTourModal';
+import { KeyboardShortcutsModal } from './components/UI/KeyboardShortcutsModal';
+import { GripVertical, GripHorizontal, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Mobile-only bottom tab
 type MobileTab = '2d' | '3d';
@@ -64,12 +66,72 @@ export const App: React.FC = () => {
   // Modals state
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isUnlayerOpen, setIsUnlayerOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    return !localStorage.getItem('vice_onboarded');
+  });
 
-  // Partial State Updater with History Push
+  // Vehicle transition loader
+  const prevVehicleRef = useRef(liveryState.vehicle);
+  const [isLoadingVehicle, setIsLoadingVehicle] = useState(false);
+  useEffect(() => {
+    if (prevVehicleRef.current !== liveryState.vehicle) {
+      prevVehicleRef.current = liveryState.vehicle;
+      setIsLoadingVehicle(true);
+      const t = setTimeout(() => setIsLoadingVehicle(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [liveryState.vehicle]);
+
+  // Partial State Updater with History Push (declared early — keyboard shortcuts useEffect depends on it)
   const handleUpdateLiveryState = useCallback((updates: Partial<LiveryState>) => {
     pushState(prev => ({ ...prev, ...updates }));
   }, [pushState]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const CAMERA_PRESET_MAP: CameraPreset[] = [
+      'front_34', 'front', 'side', 'rear', 'top', 'wheel', 'turntable', 'cinematic'
+    ];
+    const handler = (e: KeyboardEvent) => {
+      // Ignore when typing in inputs/textareas
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      // Undo / Redo
+      if (e.ctrlKey && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
+      if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); return; }
+
+      // Delete selected decal — handled in LiveryCanvas via its own listener, skip
+
+      // Camera preset 1-8
+      const num = parseInt(e.key);
+      if (!isNaN(num) && num >= 1 && num <= 8) {
+        setCameraPreset(CAMERA_PRESET_MAP[num - 1]);
+        return;
+      }
+
+      // Studio FX shortcuts
+      if (e.key === 'r' || e.key === 'R') {
+        // Rev engine shortcut — dispatched via Header; just trigger handleUpdateLiveryState noop here
+        // Real rev is handled inside Header's own button; we skip to avoid double trigger
+        return;
+      }
+      if (e.key === 'u' || e.key === 'U') {
+        handleUpdateLiveryState({ underglowEnabled: !liveryState.underglowEnabled });
+        return;
+      }
+
+      // Shortcuts modal
+      if (e.key === '?') {
+        setIsShortcutsOpen(prev => !prev);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo, liveryState.underglowEnabled, handleUpdateLiveryState]);
 
   // Decal Operations
   const handleAddDecal = useCallback((decalPartial: Partial<DecalLayer>) => {
@@ -124,20 +186,9 @@ export const App: React.FC = () => {
   }, [pushState]);
 
   const handleSaveUnlayerImage = useCallback((dataUrl: string) => {
-    handleAddDecal({
-      name: 'Unlayer Image Artwork',
-      category: 'stencil',
-      assetId: 'unlayer_artwork',
-      x: 512,
-      y: 512,
-      scaleX: 1,
-      scaleY: 1,
-      rotation: 0,
-      color: '#ffffff',
-      opacity: 1,
-      visible: true
-    });
-  }, [handleAddDecal]);
+    // Store the Unlayer-edited image as the canvas base overlay layer
+    pushState(prev => ({ ...prev, unlayerOverlayUrl: dataUrl }));
+  }, [pushState]);
 
   // ─── DRAG EVENT LISTENERS FOR SPLITTERS ─────────────────────────────────────
   const handleStartMainSplitDrag = (e: React.PointerEvent) => {
@@ -155,7 +206,7 @@ export const App: React.FC = () => {
       const rect = mainContainerRef.current.getBoundingClientRect();
       const currentX = e.clientX - rect.left;
       const percentage = (currentX / rect.width) * 100;
-      const clamped = Math.max(25, Math.min(75, percentage));
+      const clamped = Math.max(15, Math.min(85, percentage));
       setMainSplitPercent(clamped);
     }
 
@@ -163,7 +214,12 @@ export const App: React.FC = () => {
       const rect = leftPanelRef.current.getBoundingClientRect();
       const currentY = e.clientY - rect.top;
       const percentage = (currentY / rect.height) * 100;
-      const clamped = Math.max(30, Math.min(75, percentage));
+      
+      let clamped = percentage;
+      if (clamped < 10) clamped = 0;
+      else if (clamped > 90) clamped = 100;
+      else clamped = Math.max(15, Math.min(85, clamped));
+      
       setVerticalSplitPercent(clamped);
     }
   };
@@ -185,7 +241,7 @@ export const App: React.FC = () => {
     <div
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className="min-h-screen w-full bg-[#070710] text-white flex flex-col font-sans select-none overflow-x-hidden"
+      className="h-[100dvh] w-full bg-[#070710] text-white flex flex-col font-sans select-none overflow-hidden"
     >
       {/* TOP HEADER NAVIGATION */}
       <Header
@@ -195,41 +251,16 @@ export const App: React.FC = () => {
         onSelectViewMode={setViewMode}
         onOpenPresetsModal={() => setIsPresetsOpen(true)}
         onOpenExportModal={() => setIsExportOpen(true)}
-        onOpenUnlayerModal={() => setIsUnlayerOpen(true)}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
       />
 
-      {/* ── MOBILE TAB SWITCHER (visible below lg) ── */}
-      <div className="lg:hidden flex border-b border-vice-border bg-[#0b0b14]">
-        <button
-          onClick={() => setMobileTab('2d')}
-          className={`flex-1 py-2.5 text-xs font-vice transition-all ${
-            mobileTab === '2d'
-              ? 'text-vice-pink border-b-2 border-vice-pink bg-vice-card/50 font-bold'
-              : 'text-gray-400'
-          }`}
-        >
-          🎨 2D CANVAS &amp; EDITOR
-        </button>
-        <button
-          onClick={() => setMobileTab('3d')}
-          className={`flex-1 py-2.5 text-xs font-vice transition-all ${
-            mobileTab === '3d'
-              ? 'text-vice-cyan border-b-2 border-vice-cyan bg-vice-card/50 font-bold'
-              : 'text-gray-400'
-          }`}
-        >
-          🚗 3D GARAGE STUDIO
-        </button>
-      </div>
-
       {/* ── MAIN WORKSPACE WITH DRAGGABLE RESIZERS ── */}
       <main
         ref={mainContainerRef}
-        className="flex-1 flex flex-col lg:flex-row p-2 lg:p-3 min-h-0 relative gap-0 overflow-hidden"
+        className="flex-1 flex flex-col lg:flex-row p-1.5 sm:p-2 lg:p-3 min-h-0 relative gap-0 overflow-hidden"
       >
         {/* ── SECTION 1 & 2: 2D CANVAS & EDITOR SUITE ── */}
         <div
@@ -241,16 +272,16 @@ export const App: React.FC = () => {
             ${show2D ? 'flex' : 'hidden'}
             ${mobileTab === '2d' ? 'w-full flex' : 'hidden lg:flex'}
             flex-col
-            h-[calc(100vh-130px)] lg:h-[calc(100vh-125px)]
+            h-full
             min-w-0 shrink-0
           `}
         >
           {/* 1. 2D Texture Canvas Section (Top) */}
           <div
             style={{
-              height: `${verticalSplitPercent}%`
+              height: verticalSplitPercent === 0 ? '0%' : verticalSplitPercent === 100 ? '100%' : `${verticalSplitPercent}%`
             }}
-            className="w-full min-h-[220px] shrink-0 relative flex flex-col"
+            className={`w-full relative flex flex-col ${verticalSplitPercent === 0 ? 'hidden' : 'min-h-[180px] sm:min-h-[220px] shrink-0'}`}
           >
             <LiveryCanvas
               liveryState={liveryState}
@@ -262,6 +293,7 @@ export const App: React.FC = () => {
               onRedo={redo}
               canUndo={canUndo}
               canRedo={canRedo}
+              onOpenExportModal={() => setIsExportOpen(true)}
             />
           </div>
 
@@ -270,15 +302,31 @@ export const App: React.FC = () => {
             onPointerDown={handleStartVerticalSplitDrag}
             onDoubleClick={() => setVerticalSplitPercent(58)}
             title="Drag up/down to resize Canvas vs Editor (Double click to reset)"
-            className="w-full h-3 bg-[#0d0d1a] hover:bg-vice-pink/30 active:bg-vice-pink/50 cursor-row-resize flex items-center justify-center transition-colors group z-10 shrink-0 select-none border-y border-vice-border"
+            className="w-full h-4 sm:h-5 bg-[#0d0d1a] hover:bg-vice-pink/30 active:bg-vice-pink/50 cursor-row-resize flex items-center justify-center transition-colors group z-10 shrink-0 select-none border-y border-vice-border touch-none gap-6"
           >
-            <div className="w-16 h-1 rounded-full bg-gray-600 group-hover:bg-vice-pink group-hover:shadow-neon-pink transition-all flex items-center justify-center">
-              <GripHorizontal size={12} className="text-gray-400 group-hover:text-white" />
+            <button
+              onClick={(e) => { e.stopPropagation(); setVerticalSplitPercent(0); }}
+              className="p-1 bg-[#1a1a2e] border border-vice-pink/50 text-vice-pink hover:bg-vice-pink hover:text-white transition-all rounded shadow-[0_0_8px_rgba(255,0,127,0.4)] hover:shadow-neon-pink z-20 cursor-pointer"
+              title="Collapse Canvas"
+            >
+              <ChevronUp size={14} />
+            </button>
+
+            <div className="w-20 sm:w-24 h-1.5 rounded-full bg-gray-600 group-hover:bg-vice-pink group-hover:shadow-neon-pink transition-all flex items-center justify-center">
+              <GripHorizontal size={14} className="text-gray-400 group-hover:text-white" />
             </div>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); setVerticalSplitPercent(100); }}
+              className="p-1 bg-[#1a1a2e] border border-vice-pink/50 text-vice-pink hover:bg-vice-pink hover:text-white transition-all rounded shadow-[0_0_8px_rgba(255,0,127,0.4)] hover:shadow-neon-pink z-20 cursor-pointer"
+              title="Collapse Editor"
+            >
+              <ChevronDown size={14} />
+            </button>
           </div>
 
           {/* 2. 2D Toolbar / Editor Panel Section (Bottom) */}
-          <div className="flex-1 min-h-[180px] overflow-hidden">
+          <div className={`flex-1 overflow-hidden flex flex-col ${verticalSplitPercent === 100 ? 'hidden' : 'min-h-[140px] sm:min-h-[180px]'}`}>
             <Toolbar2D
               liveryState={liveryState}
               onUpdateState={handleUpdateLiveryState}
@@ -287,6 +335,8 @@ export const App: React.FC = () => {
               onAddDecal={handleAddDecal}
               onUpdateDecal={handleUpdateDecal}
               onRemoveDecal={handleRemoveDecal}
+              canvasDataUrl={canvasElement ? canvasElement.toDataURL() : ''}
+              onSaveUnlayerImage={handleSaveUnlayerImage}
             />
           </div>
         </div>
@@ -297,11 +347,27 @@ export const App: React.FC = () => {
             onPointerDown={handleStartMainSplitDrag}
             onDoubleClick={() => setMainSplitPercent(50)}
             title="Drag left/right to resize 2D Editor vs 3D Studio (Double click to reset 50/50)"
-            className="hidden lg:flex w-3.5 h-[calc(100vh-125px)] bg-[#0d0d1a] hover:bg-vice-cyan/30 active:bg-vice-cyan/50 cursor-col-resize items-center justify-center transition-colors group z-20 shrink-0 select-none border-x border-vice-border mx-0.5"
+            className="hidden lg:flex w-5 h-full bg-[#0d0d1a] hover:bg-vice-cyan/30 active:bg-vice-cyan/50 cursor-col-resize flex-col items-center justify-center transition-colors group z-20 shrink-0 select-none border-x border-vice-border mx-0.5 touch-none gap-6"
           >
-            <div className="w-1.5 h-16 rounded-full bg-gray-600 group-hover:bg-vice-cyan group-hover:shadow-neon-cyan transition-all flex flex-col items-center justify-center gap-1">
-              <GripVertical size={12} className="text-gray-400 group-hover:text-black" />
+            <button
+              onClick={(e) => { e.stopPropagation(); setViewMode('3d_only'); }}
+              className="p-1 bg-[#1a1a2e] border border-vice-cyan/50 text-vice-cyan hover:bg-vice-cyan hover:text-black transition-all rounded shadow-[0_0_8px_rgba(0,240,255,0.4)] hover:shadow-neon-cyan z-20 cursor-pointer"
+              title="Collapse 2D Editor"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <div className="w-1.5 h-24 rounded-full bg-gray-600 group-hover:bg-vice-cyan group-hover:shadow-neon-cyan transition-all flex flex-col items-center justify-center gap-1">
+              <GripVertical size={14} className="text-gray-400 group-hover:text-black" />
             </div>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); setViewMode('2d_only'); }}
+              className="p-1 bg-[#1a1a2e] border border-vice-cyan/50 text-vice-cyan hover:bg-vice-cyan hover:text-black transition-all rounded shadow-[0_0_8px_rgba(0,240,255,0.4)] hover:shadow-neon-cyan z-20 cursor-pointer"
+              title="Collapse 3D Studio"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         )}
 
@@ -314,12 +380,13 @@ export const App: React.FC = () => {
             ${show3D ? 'flex' : 'hidden'}
             ${mobileTab === '3d' ? 'w-full flex' : 'hidden lg:flex'}
             flex-col flex-1
-            h-[calc(100vh-130px)] lg:h-[calc(100vh-125px)]
+            h-full
             min-w-0
           `}
         >
           <GarageScene
             liveryState={liveryState}
+            onUpdateState={handleUpdateLiveryState}
             canvasElement={canvasElement}
             cameraPreset={cameraPreset}
             onSelectCameraPreset={setCameraPreset}
@@ -329,8 +396,32 @@ export const App: React.FC = () => {
         </div>
       </main>
 
+      {/* ── NATIVE MOBILE BOTTOM TAB BAR (below lg) ── */}
+      <div className="lg:hidden flex border-t border-vice-border bg-[#0b0b14]/95 backdrop-blur-md shrink-0 z-30">
+        <button
+          onClick={() => setMobileTab('2d')}
+          className={`flex-1 py-3 text-xs font-vice transition-all flex items-center justify-center gap-2 ${
+            mobileTab === '2d'
+              ? 'text-vice-pink bg-vice-card/60 font-bold border-t-2 border-vice-pink shadow-neon-pink'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <span>🎨</span> 2D CANVAS &amp; EDITOR
+        </button>
+        <button
+          onClick={() => setMobileTab('3d')}
+          className={`flex-1 py-3 text-xs font-vice transition-all flex items-center justify-center gap-2 ${
+            mobileTab === '3d'
+              ? 'text-vice-cyan bg-vice-card/60 font-bold border-t-2 border-vice-cyan shadow-neon-cyan'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <span>🚗</span> 3D GARAGE STUDIO
+        </button>
+      </div>
+
       {/* BOTTOM RADIO STATION BAR */}
-      <footer className="px-2 sm:px-3 pb-2 sm:pb-3 pt-1">
+      <footer className="px-2 sm:px-3 pb-1.5 pt-1 shrink-0">
         <ViceRadio />
       </footer>
 
@@ -350,11 +441,41 @@ export const App: React.FC = () => {
         onLoadLivery={handleLoadLiveryPreset}
       />
 
-      <UnlayerEditorModal
-        isOpen={isUnlayerOpen}
-        onClose={() => setIsUnlayerOpen(false)}
-        imageUrl={canvasElement ? canvasElement.toDataURL() : ''}
-        onSaveEditedImage={handleSaveUnlayerImage}
+
+
+      {/* VEHICLE TRANSITION LOADER — shows briefly on vehicle switch */}
+      <VehicleTransitionLoader
+        isLoading={isLoadingVehicle}
+        vehicle={liveryState.vehicle}
+      />
+
+      {/* ONBOARDING TOUR — shows on first visit, dismissed via localStorage */}
+      <OnboardingTourModal
+        isOpen={isOnboardingOpen}
+        onClose={() => {
+          localStorage.setItem('vice_onboarded', '1');
+          setIsOnboardingOpen(false);
+        }}
+        onOpenShortcuts={() => {
+          localStorage.setItem('vice_onboarded', '1');
+          setIsOnboardingOpen(false);
+          setIsShortcutsOpen(true);
+        }}
+        onOpenExportModal={() => {
+          localStorage.setItem('vice_onboarded', '1');
+          setIsOnboardingOpen(false);
+          setIsExportOpen(true);
+        }}
+      />
+
+      {/* KEYBOARD SHORTCUTS MODAL — toggle with ? key */}
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+        onOpenTour={() => {
+          setIsShortcutsOpen(false);
+          setIsOnboardingOpen(true);
+        }}
       />
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { LiveryState } from '../../types';
 import { audioEngine } from '../../utils/audioEngine';
 import { downloadLiveryJson, readLiveryJsonFile } from '../../utils/shareUtils';
-import { Download, Camera, Save, X, Check, Image as ImageIcon, Upload, Trash2, FolderOpen, FileCode } from 'lucide-react';
+import { Download, Camera, Save, X, Check, Image as ImageIcon, Upload, Trash2, FolderOpen, FileCode, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -29,6 +29,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [activeTab, setActiveTab] = useState<'images' | 'json_garage'>('images');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [customSlotName, setCustomSlotName] = useState('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [jsonSuccess, setJsonSuccess] = useState<string | null>(null);
+
   const [garageSlots, setGarageSlots] = useState<SavedGarageSlot[]>(() => {
     try {
       const str = localStorage.getItem('vice_customs_garage') || '[]';
@@ -66,23 +69,49 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   // 3. Download JSON Livery File
   const handleDownloadJson = () => {
-    audioEngine.playClickSFX();
-    downloadLiveryJson(liveryState);
+    setJsonError(null);
+    setJsonSuccess(null);
+    try {
+      if (!liveryState || !liveryState.vehicle || !liveryState.primaryColor) {
+        throw new Error('Livery configuration state is incomplete or invalid.');
+      }
+      audioEngine.playClickSFX();
+      downloadLiveryJson(liveryState);
+      setJsonSuccess('JSON Livery configuration downloaded successfully!');
+      setTimeout(() => setJsonSuccess(null), 3500);
+    } catch (err: any) {
+      setJsonError(err.message || 'Failed to export Livery JSON file.');
+    }
   };
 
   // 4. Import JSON Livery File
   const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setJsonError(null);
+    setJsonSuccess(null);
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setJsonError('Invalid file type. Please select a valid .json livery file.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     try {
       audioEngine.playSprayPaintSFX();
       const loadedState = await readLiveryJsonFile(file);
       if (onLoadLivery) {
         onLoadLivery(loadedState);
       }
-      onClose();
-    } catch (err) {
-      alert('Failed to parse Livery JSON file. Please check file format.');
+      setJsonSuccess(`Successfully imported "${file.name}"!`);
+      setTimeout(() => {
+        setJsonSuccess(null);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setJsonError(err.message || 'Failed to parse Livery JSON file. Ensure the file contains a valid LiveryState structure.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -131,10 +160,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-vice text-white tracking-wider">
-                EXPORT &amp; LIVERY STORAGE
+                EXPORT &amp; PRINT STUDIO
               </h2>
-              <p className="text-xs text-gray-400">
-                Download 2D/3D visual renders &amp; JSON livery presets
+              <p className="text-xs text-vice-pink font-bold">
+                🖨️ READY TO PRINT &amp; EXPORT — 1024×1024 UV Textures, 3D Renders &amp; JSON presets
               </p>
             </div>
           </div>
@@ -162,6 +191,32 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <FileCode size={15} /> 💾 JSON &amp; Garage Storage ({garageSlots.length})
           </button>
         </div>
+
+        {/* JSON Error Banner */}
+        {jsonError && (
+          <div className="bg-red-950/80 border border-red-500/80 text-red-200 px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-between shadow-lg my-1 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-red-400 shrink-0" />
+              <span>{jsonError}</span>
+            </div>
+            <button onClick={() => setJsonError(null)} className="text-red-400 hover:text-white p-0.5">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* JSON Success Banner */}
+        {jsonSuccess && (
+          <div className="bg-emerald-950/80 border border-emerald-500/80 text-emerald-200 px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-between shadow-lg my-1 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={16} className="text-emerald-400 shrink-0" />
+              <span>{jsonSuccess}</span>
+            </div>
+            <button onClick={() => setJsonSuccess(null)} className="text-emerald-400 hover:text-white p-0.5">
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* ── TAB 1: EXPORT IMAGES & 3D ── */}
         {activeTab === 'images' && (

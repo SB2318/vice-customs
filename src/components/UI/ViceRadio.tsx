@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { audioEngine } from '../../utils/audioEngine';
 import { Radio, Volume2, VolumeX, Play, Square, Disc } from 'lucide-react';
 
@@ -10,17 +10,34 @@ export const RADIO_STATIONS = [
 ];
 
 export const ViceRadio: React.FC = () => {
-  const [activeStation, setActiveStation] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [activeStation, setActiveStation] = useState<string | null>(() => audioEngine.getCurrentStation());
+  const [isMuted, setIsMuted] = useState(() => audioEngine.getIsMuted());
   const [volume, setVolume] = useState(0.4);
 
+  useEffect(() => {
+    const unsubMute = audioEngine.subscribeMute((muted) => {
+      setIsMuted(muted);
+      if (muted) setActiveStation(null);
+    });
+
+    const unsubRadio = audioEngine.subscribeRadio((station) => {
+      setActiveStation(station);
+    });
+
+    return () => {
+      unsubMute();
+      unsubRadio();
+    };
+  }, []);
+
   const handleStationClick = (id: string) => {
+    if (audioEngine.getIsMuted()) {
+      audioEngine.toggleMute(); // unmute if user clicks a radio station
+    }
     if (activeStation === id) {
       audioEngine.stopRadio();
-      setActiveStation(null);
     } else {
       audioEngine.playRadioStation(id);
-      setActiveStation(id);
     }
   };
 
@@ -30,8 +47,8 @@ export const ViceRadio: React.FC = () => {
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
-    audioEngine.setRadioVolume(!isMuted ? 0 : volume);
+    const nextMuted = audioEngine.toggleMute();
+    setIsMuted(nextMuted);
   };
 
   return (

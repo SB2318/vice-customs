@@ -41,84 +41,86 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
     }
   });
 
-  // Calculate advanced MeshPhysicalMaterial parameters based on Paint Finish
+  // Calculate advanced MeshPhysicalMaterial parameters with RAIN & WET REFLECTION PHYSICS
+  const isRain = liveryState.isRainyWeather;
+
   const finishParams = useMemo(() => {
     switch (liveryState.finish) {
       case 'matte':
         return {
-          roughness: 0.82,
+          roughness: isRain ? 0.38 : 0.82,
           metalness: 0.05,
-          clearcoat: 0,
-          clearcoatRoughness: 0.5,
-          reflectivity: 0.2,
+          clearcoat: isRain ? 0.8 : 0,
+          clearcoatRoughness: isRain ? 0.03 : 0.5,
+          reflectivity: isRain ? 0.85 : 0.2,
           iridescence: 0,
-          envMapIntensity: 0.5
+          envMapIntensity: isRain ? 1.4 : 0.5
         };
       case 'metallic':
         return {
-          roughness: 0.22,
-          metalness: 0.85,
-          clearcoat: 0.8,
-          clearcoatRoughness: 0.1,
-          reflectivity: 0.9,
-          iridescence: 0.1,
-          envMapIntensity: 1.4
+          roughness: isRain ? 0.05 : 0.22,
+          metalness: 0.88,
+          clearcoat: 1.0,
+          clearcoatRoughness: isRain ? 0.02 : 0.1,
+          reflectivity: 1.0,
+          iridescence: 0.15,
+          envMapIntensity: isRain ? 2.2 : 1.4
         };
       case 'pearlescent':
         return {
-          roughness: 0.14,
+          roughness: isRain ? 0.04 : 0.14,
           metalness: 0.45,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.05,
-          reflectivity: 0.95,
-          iridescence: 0.7,
+          clearcoatRoughness: isRain ? 0.02 : 0.05,
+          reflectivity: 1.0,
+          iridescence: 0.8,
           iridescenceIOR: 1.6,
-          envMapIntensity: 1.5
+          envMapIntensity: isRain ? 2.4 : 1.5
         };
       case 'chameleon':
         return {
-          roughness: 0.12,
+          roughness: isRain ? 0.03 : 0.12,
           metalness: 0.5,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.04,
+          clearcoatRoughness: isRain ? 0.02 : 0.04,
           reflectivity: 1.0,
           iridescence: 1.0,
           iridescenceIOR: 1.8,
-          envMapIntensity: 1.6
+          envMapIntensity: isRain ? 2.5 : 1.6
         };
       case 'carbon':
         return {
-          roughness: 0.45,
+          roughness: isRain ? 0.15 : 0.45,
           metalness: 0.25,
-          clearcoat: 0.5,
-          clearcoatRoughness: 0.2,
-          reflectivity: 0.5,
+          clearcoat: isRain ? 0.95 : 0.5,
+          clearcoatRoughness: isRain ? 0.03 : 0.2,
+          reflectivity: isRain ? 0.9 : 0.5,
           iridescence: 0,
-          envMapIntensity: 0.9
+          envMapIntensity: isRain ? 1.6 : 0.9
         };
       case 'rust':
         return {
-          roughness: 0.96,
+          roughness: isRain ? 0.65 : 0.96,
           metalness: 0.05,
-          clearcoat: 0,
-          clearcoatRoughness: 0.8,
-          reflectivity: 0.1,
+          clearcoat: isRain ? 0.4 : 0,
+          clearcoatRoughness: 0.6,
+          reflectivity: isRain ? 0.4 : 0.1,
           iridescence: 0,
-          envMapIntensity: 0.3
+          envMapIntensity: isRain ? 0.8 : 0.3
         };
       case 'gloss':
       default:
         return {
-          roughness: 0.18,
+          roughness: isRain ? 0.04 : 0.18,
           metalness: 0.15,
-          clearcoat: 0.95,
-          clearcoatRoughness: 0.06,
-          reflectivity: 0.85,
+          clearcoat: 1.0,
+          clearcoatRoughness: isRain ? 0.02 : 0.06,
+          reflectivity: 1.0,
           iridescence: 0,
-          envMapIntensity: 1.2
+          envMapIntensity: isRain ? 2.0 : 1.2
         };
     }
-  }, [liveryState.finish]);
+  }, [liveryState.finish, isRain]);
 
   const underglowColor = liveryState.underglowEnabled ? liveryState.underglowColor : '#000000';
   const rimColor = liveryState.rimColor || '#e5e5e5';
@@ -129,7 +131,6 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
       {liveryState.underglowEnabled && (
         <group position={[0, 0.05, 0]}>
           <pointLight color={underglowColor} intensity={liveryState.underglowBeatPulse ? 14 : 8} distance={6} decay={2} />
-          {/* Neon Light Tube Bar Mesh */}
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[1.8, 0.04, 3.8]} />
             <meshBasicMaterial color={underglowColor} />
@@ -140,26 +141,25 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
       {/* 3D REAR EXHAUST BACKFIRE FLAMES FX */}
       {liveryState.isExhaustFlamesActive && (
         <group position={[0, 0.4, -2.3]}>
-          {/* Left Exhaust Flame Cone */}
+          {/* Left Flame */}
           <mesh position={[-0.5, 0, -0.4]} rotation={[-Math.PI / 2, 0, 0]}>
             <coneGeometry args={[0.22, 0.9, 16]} />
             <meshBasicMaterial color="#ff5500" transparent opacity={0.9} />
           </mesh>
-          <pointLight position={[-0.5, 0, -0.4]} color="#ff5500" intensity={15} distance={5} />
+          <pointLight position={[-0.5, 0, -0.4]} color="#ff5500" intensity={16} distance={6} />
 
-          {/* Right Exhaust Flame Cone */}
+          {/* Right Flame */}
           <mesh position={[0.5, 0, -0.4]} rotation={[-Math.PI / 2, 0, 0]}>
             <coneGeometry args={[0.22, 0.9, 16]} />
             <meshBasicMaterial color="#ffea00" transparent opacity={0.9} />
           </mesh>
-          <pointLight position={[0.5, 0, -0.4]} color="#ffea00" intensity={15} distance={5} />
+          <pointLight position={[0.5, 0, -0.4]} color="#ffea00" intensity={16} distance={6} />
         </group>
       )}
 
-      {/* --- INFERNUS SUPERCAR --- */}
+      {/* ════════════════ 1. INFERNUS SUPERCAR ════════════════ */}
       {liveryState.vehicle === 'infernus' && (
         <group position={[0, 0.6, 0]}>
-          {/* Main Wedge Body */}
           <mesh castShadow receiveShadow position={[0, 0.3, 0]}>
             <boxGeometry args={[2.0, 0.5, 4.4]} />
             <meshPhysicalMaterial
@@ -173,26 +173,16 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <mesh position={[0, 0.75, -0.2]}>
             <boxGeometry args={[1.6, 0.45, 2.0]} />
             <meshPhysicalMaterial
-              color={
-                liveryState.windowTint === 'cyan_neon'
-                  ? '#00f0ff'
-                  : liveryState.windowTint === 'pink_neon'
-                  ? '#ff007f'
-                  : liveryState.windowTint === 'dark_limo'
-                  ? '#05070c'
-                  : '#0d111a'
-              }
-              transmission={liveryState.windowTint === 'dark_limo' ? 0.35 : 0.8}
+              color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : liveryState.windowTint === 'pink_neon' ? '#ff007f' : '#0d111a'}
+              transmission={0.8}
               opacity={1}
               transparent
               roughness={0.05}
               clearcoat={1.0}
-              clearcoatRoughness={0.05}
-              ior={1.52}
             />
           </mesh>
 
-          {/* Animated Hood Bonnet */}
+          {/* Animated Hood */}
           <group ref={hoodRef} position={[0, 0.55, 1.2]}>
             <mesh castShadow position={[0, 0, 0.6]}>
               <boxGeometry args={[1.7, 0.12, 1.2]} />
@@ -204,7 +194,7 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             </mesh>
           </group>
 
-          {/* Animated Scissor Left Door */}
+          {/* Scissor Door */}
           <group ref={leftDoorRef} position={[-0.95, 0.55, 0.2]}>
             <mesh castShadow position={[0, 0, -0.5]}>
               <boxGeometry args={[0.1, 0.4, 1.2]} />
@@ -216,11 +206,11 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             </mesh>
           </group>
 
-          {/* Rear Wing Spoiler */}
+          {/* Rear GT Wing */}
           <group position={[0, 0.8, -2.0]}>
             <mesh position={[0, 0.2, 0]}>
               <boxGeometry args={[2.2, 0.06, 0.4]} />
-              <meshPhysicalMaterial color="#111111" roughness={0.3} metalness={0.8} clearcoat={0.6} />
+              <meshPhysicalMaterial color="#111111" roughness={0.2} metalness={0.8} clearcoat={0.8} />
             </mesh>
             <mesh position={[-0.8, 0, 0]}>
               <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
@@ -242,23 +232,86 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
               <boxGeometry args={[0.4, 0.12, 0.1]} />
               <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#222222'} />
             </mesh>
-            {liveryState.headlightsOn && (
-              <>
-                <spotLight position={[-0.7, 0, 0.2]} target-position={[-0.7, -0.5, 8]} color={liveryState.headlightsColor} intensity={12} distance={15} angle={0.5} />
-                <spotLight position={[0.7, 0, 0.2]} target-position={[0.7, -0.5, 8]} color={liveryState.headlightsColor} intensity={12} distance={15} angle={0.5} />
-              </>
-            )}
+          </group>
+        </group>
+      )}
+
+      {/* ════════════════ 2. GROTTI CHEETAH CLASSIC ════════════════ */}
+      {liveryState.vehicle === 'cheetah' && (
+        <group position={[0, 0.58, 0]}>
+          {/* Low Wedge Body */}
+          <mesh castShadow receiveShadow position={[0, 0.28, 0]}>
+            <boxGeometry args={[2.05, 0.48, 4.3]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+
+          {/* Side Strakes / Testarossa Ribs */}
+          <group position={[-1.04, 0.28, 0]}>
+            {[-0.4, -0.1, 0.2, 0.5].map((zOffset, i) => (
+              <mesh key={i} position={[0, (i - 1.5) * 0.08, zOffset]}>
+                <boxGeometry args={[0.04, 0.03, 0.8]} />
+                <meshPhysicalMaterial color="#111111" metalness={0.8} />
+              </mesh>
+            ))}
+          </group>
+          <group position={[1.04, 0.28, 0]}>
+            {[-0.4, -0.1, 0.2, 0.5].map((zOffset, i) => (
+              <mesh key={i} position={[0, (i - 1.5) * 0.08, zOffset]}>
+                <boxGeometry args={[0.04, 0.03, 0.8]} />
+                <meshPhysicalMaterial color="#111111" metalness={0.8} />
+              </mesh>
+            ))}
           </group>
 
-          {/* Taillights */}
-          <mesh position={[0, 0.45, -2.21]}>
-            <boxGeometry args={[1.8, 0.15, 0.05]} />
-            <meshBasicMaterial color="#ff0022" />
+          {/* Angular Cabin Greenhouse */}
+          <mesh position={[0, 0.68, -0.15]}>
+            <boxGeometry args={[1.5, 0.4, 1.9]} />
+            <meshPhysicalMaterial
+              color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : '#0d111a'}
+              transmission={0.85}
+              roughness={0.05}
+              clearcoat={1.0}
+              transparent
+            />
+          </mesh>
+
+          {/* Pop-up Headlamp Housings */}
+          <group position={[0, 0.48, 1.6]}>
+            <mesh position={[-0.6, 0.06, 0]} rotation={[-0.15, 0, 0]}>
+              <boxGeometry args={[0.35, 0.12, 0.35]} />
+              <meshPhysicalMaterial
+                map={bodyTexture || undefined}
+                color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+                {...finishParams}
+              />
+            </mesh>
+            <mesh position={[0.6, 0.06, 0]} rotation={[-0.15, 0, 0]}>
+              <boxGeometry args={[0.35, 0.12, 0.35]} />
+              <meshPhysicalMaterial
+                map={bodyTexture || undefined}
+                color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+                {...finishParams}
+              />
+            </mesh>
+          </group>
+
+          {/* Rear Testarossa Slatted Grille */}
+          <mesh position={[0, 0.32, -2.16]}>
+            <boxGeometry args={[1.9, 0.22, 0.04]} />
+            <meshBasicMaterial color="#111111" />
+          </mesh>
+          <mesh position={[0, 0.34, -2.18]}>
+            <boxGeometry args={[1.7, 0.06, 0.02]} />
+            <meshBasicMaterial color="#ff0033" />
           </mesh>
         </group>
       )}
 
-      {/* --- BANSHEE GTS SPORTS CAR --- */}
+      {/* ════════════════ 3. BRAVADO BANSHEE GTS ════════════════ */}
       {liveryState.vehicle === 'banshee' && (
         <group position={[0, 0.6, 0]}>
           <mesh castShadow receiveShadow position={[0, 0.35, 0]}>
@@ -284,22 +337,15 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
           <mesh position={[0, 0.8, -0.4]}>
             <sphereGeometry args={[0.9, 16, 16]} />
             <meshPhysicalMaterial
-              color={
-                liveryState.windowTint === 'cyan_neon'
-                  ? '#00f0ff'
-                  : liveryState.windowTint === 'pink_neon'
-                  ? '#ff007f'
-                  : liveryState.windowTint === 'dark_limo'
-                  ? '#05070c'
-                  : '#0b0f19'
-              }
+              color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : '#0b0f19'}
               roughness={0.05}
-              transmission={liveryState.windowTint === 'dark_limo' ? 0.35 : 0.8}
+              transmission={0.8}
               transparent
               clearcoat={1.0}
             />
           </mesh>
 
+          {/* Round Headlights */}
           <group position={[0, 0.42, 2.05]}>
             <mesh position={[-0.65, 0, 0]}>
               <sphereGeometry args={[0.18, 16, 16]} />
@@ -310,19 +356,79 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
               <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#222222'} />
             </mesh>
           </group>
-
-          <mesh position={[-0.5, 0.15, -2.12]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.08, 0.08, 0.2, 16]} />
-            <meshPhysicalMaterial color="#cccccc" metalness={0.95} roughness={0.1} clearcoat={1.0} />
-          </mesh>
-          <mesh position={[0.5, 0.15, -2.12]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.08, 0.08, 0.2, 16]} />
-            <meshPhysicalMaterial color="#cccccc" metalness={0.95} roughness={0.1} clearcoat={1.0} />
-          </mesh>
         </group>
       )}
 
-      {/* --- DOMINATOR MUSCLE CAR --- */}
+      {/* ════════════════ 4. PFISTER COMET GT TURBO ════════════════ */}
+      {liveryState.vehicle === 'comet' && (
+        <group position={[0, 0.6, 0]}>
+          {/* Main Curved Coupe Body */}
+          <mesh castShadow receiveShadow position={[0, 0.32, 0]}>
+            <boxGeometry args={[1.85, 0.52, 4.1]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+
+          {/* Wide Rear Turbo Flares */}
+          <mesh position={[-0.96, 0.3, -1.1]}>
+            <boxGeometry args={[0.22, 0.4, 1.4]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          <mesh position={[0.96, 0.3, -1.1]}>
+            <boxGeometry args={[0.22, 0.4, 1.4]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+
+          {/* Curved Teardrop Roof */}
+          <mesh position={[0, 0.72, -0.3]}>
+            <boxGeometry args={[1.45, 0.42, 1.8]} />
+            <meshPhysicalMaterial
+              color={liveryState.windowTint === 'cyan_neon' ? '#00f0ff' : '#0a0d14'}
+              roughness={0.05}
+              transmission={0.8}
+              transparent
+              clearcoat={1.0}
+            />
+          </mesh>
+
+          {/* Iconic Whale-Tail Rear Spoiler */}
+          <mesh position={[0, 0.62, -1.85]} rotation={[0.15, 0, 0]}>
+            <boxGeometry args={[1.7, 0.08, 0.6]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#111111'}
+              metalness={0.8}
+              roughness={0.2}
+              clearcoat={0.9}
+            />
+          </mesh>
+
+          {/* Iconic 911 Bug-Eye Headlights */}
+          <group position={[0, 0.52, 1.85]}>
+            <mesh position={[-0.65, 0, 0]} rotation={[0.3, 0, 0]}>
+              <cylinderGeometry args={[0.18, 0.18, 0.2, 16]} />
+              <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#333333'} />
+            </mesh>
+            <mesh position={[0.65, 0, 0]} rotation={[0.3, 0, 0]}>
+              <cylinderGeometry args={[0.18, 0.18, 0.2, 16]} />
+              <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#333333'} />
+            </mesh>
+          </group>
+        </group>
+      )}
+
+      {/* ════════════════ 5. VAPID DOMINATOR GTX ════════════════ */}
       {liveryState.vehicle === 'dominator' && (
         <group position={[0, 0.65, 0]}>
           <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
@@ -348,25 +454,15 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
             />
           </mesh>
 
+          {/* Aggressive Front Grille */}
           <mesh position={[0, 0.4, 2.26]}>
             <boxGeometry args={[1.8, 0.35, 0.05]} />
             <meshPhysicalMaterial color="#050505" roughness={0.9} metalness={0.1} />
           </mesh>
-
-          <group position={[0, 0.4, 2.28]}>
-            <mesh position={[-0.7, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.12, 0.12, 0.05, 16]} />
-              <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#333333'} />
-            </mesh>
-            <mesh position={[0.7, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.12, 0.12, 0.05, 16]} />
-              <meshBasicMaterial color={liveryState.headlightsOn ? liveryState.headlightsColor : '#333333'} />
-            </mesh>
-          </group>
         </group>
       )}
 
-      {/* --- STREET DEMON DIRTBIKE --- */}
+      {/* ════════════════ 6. STREET DEMON DIRTBIKE ════════════════ */}
       {liveryState.vehicle === 'dirtbike' && (
         <group position={[0, 0.7, 0]}>
           <mesh castShadow position={[0, 0.4, 0]}>
@@ -391,15 +487,10 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
               {...finishParams}
             />
           </mesh>
-
-          <mesh position={[0, 0.85, 0.7]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.03, 0.03, 1.1, 16]} />
-            <meshPhysicalMaterial color="#111111" metalness={0.8} />
-          </mesh>
         </group>
       )}
 
-      {/* --- WHEELS ASSEMBLY WITH CUSTOM RIMS --- */}
+      {/* --- WHEELS ASSEMBLY WITH METALLIC RIMS & BRAKE CALIPERS --- */}
       <Wheel position={[-0.95, 0.35, 1.4]} rimColor={rimColor} />
       <Wheel position={[0.95, 0.35, 1.4]} rimColor={rimColor} />
       <Wheel position={[-0.95, 0.35, -1.4]} rimColor={rimColor} />

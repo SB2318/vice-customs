@@ -1,4 +1,4 @@
-export type VehicleModel = 'infernus' | 'banshee' | 'dominator' | 'dirtbike';
+export type VehicleModel = 'infernus' | 'cheetah' | 'banshee' | 'comet' | 'dominator' | 'dirtbike';
 
 export type PaintFinish = 'gloss' | 'matte' | 'metallic' | 'pearlescent' | 'chameleon' | 'carbon' | 'rust';
 
@@ -61,7 +61,9 @@ export interface LiveryState {
   rimColor: string;
   windowTint: WindowTint;
   isRainyWeather: boolean;
+  sceneEnvironment?: 'studio' | 'rain' | 'synthwave' | 'cyberpunk';
   isExhaustFlamesActive: boolean;
+  unlayerOverlayUrl?: string;
 }
 
 export type GraphicsQuality = 'low' | 'medium' | 'high';

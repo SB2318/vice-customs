@@ -4,6 +4,38 @@ class ViceAudioEngine {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
   
+  private muteListeners: Set<(muted: boolean) => void> = new Set();
+  private radioListeners: Set<(station: string | null) => void> = new Set();
+
+  constructor() {
+    this.isMuted = localStorage.getItem('vice_audio_muted') === '1';
+  }
+
+  public subscribeMute(cb: (muted: boolean) => void) {
+    this.muteListeners.add(cb);
+    return () => this.muteListeners.delete(cb);
+  }
+
+  public subscribeRadio(cb: (station: string | null) => void) {
+    this.radioListeners.add(cb);
+    return () => this.radioListeners.delete(cb);
+  }
+
+  public toggleMute(): boolean {
+    this.isMuted = !this.isMuted;
+    localStorage.setItem('vice_audio_muted', this.isMuted ? '1' : '0');
+    if (this.isMuted) {
+      this.stopEngine();
+      this.stopRadio();
+    }
+    this.muteListeners.forEach(cb => cb(this.isMuted));
+    return this.isMuted;
+  }
+
+  public getIsMuted(): boolean {
+    return this.isMuted;
+  }
+
   // Engine Rev System
   private engineIdleOsc1: OscillatorNode | null = null;
   private engineIdleOsc2: OscillatorNode | null = null;
@@ -24,6 +56,7 @@ class ViceAudioEngine {
   private radioVolume: number = 0.4;
 
   private initCtx() {
+    if (this.isMuted) return;
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       this.ctx = new AudioCtx();
@@ -256,6 +289,7 @@ class ViceAudioEngine {
   }
 
   public playClickSFX() {
+    if (this.isMuted) return;
     this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -272,13 +306,33 @@ class ViceAudioEngine {
     osc.stop(now + 0.04);
   }
 
+  public playTransitionSFX() {
+    if (this.isMuted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
   // --- SYNTHWAVE RADIO ENGINE ---
   public playRadioStation(stationId: string) {
+    if (this.isMuted) return;
     this.initCtx();
     if (!this.ctx) return;
 
     this.stopRadio();
     this.currentRadioStation = stationId;
+    this.radioListeners.forEach(cb => cb(stationId));
 
     this.radioMasterGain = this.ctx.createGain();
     this.radioMasterGain.gain.setValueAtTime(this.radioVolume, this.ctx.currentTime);
@@ -355,6 +409,7 @@ class ViceAudioEngine {
       this.radioMasterGain = null;
     }
     this.currentRadioStation = null;
+    this.radioListeners.forEach(cb => cb(null));
   }
 
   public setRadioVolume(vol: number) {

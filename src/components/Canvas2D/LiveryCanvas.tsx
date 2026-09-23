@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { LiveryState, DecalLayer } from '../../types';
+import { LiveryState, DecalLayer, VehicleModel } from '../../types';
 import { DECAL_LIBRARY } from '../../utils/decalLibrary';
-import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Eye, EyeOff } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Eye, EyeOff, Crosshair, MapPin, Printer, Download } from 'lucide-react';
 
 interface LiveryCanvasProps {
   liveryState: LiveryState;
@@ -15,6 +15,7 @@ interface LiveryCanvasProps {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  onOpenExportModal?: () => void;
 }
 
 export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
@@ -28,7 +29,8 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
   onUndo,
   onRedo,
   canUndo,
-  canRedo
+  canRedo,
+  onOpenExportModal
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,7 +42,11 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0
   });
 
-  // Multi-touch tracking for pinch-to-scale & two-finger rotate
+  // Real-time VX tracking
+  const [hoverCoords, setHoverCoords] = useState<{ x: number; y: number } | null>({ x: 512, y: 512 });
+  const [activePanel, setActivePanel] = useState<string>('HOOD BONNET');
+
+  // Multi-touch tracking
   const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStart = useRef<{ dist: number; angle: number; scaleX: number; scaleY: number; rotation: number }>({
     dist: 0,
@@ -54,6 +60,23 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
   const [localShowGuides, setLocalShowGuides] = useState(showGuides);
 
   const selectedDecal = liveryState.decals.find(d => d.id === selectedDecalId);
+
+  // Helper to resolve panel based on 2D coordinates
+  const resolvePanelName = (x: number, y: number, vehicle: VehicleModel): string => {
+    if (vehicle === 'dirtbike') {
+      if (y < 400) return 'FRONT NUMBER PLATE & FORKS';
+      if (y >= 400 && y <= 750) return x < 512 ? 'LEFT TANK SHROUD' : 'RIGHT TANK SHROUD';
+      return 'REAR FENDER & EXHAUST';
+    }
+    if (y < 420 && x >= 200 && x <= 824) return 'HOOD / FRONT BONNET';
+    if (y >= 420 && y <= 830) {
+      if (x <= 480) return 'LEFT DOOR & SIDE SILL';
+      if (x >= 544) return 'RIGHT DOOR & SIDE SILL';
+      return 'ROOF & CABIN TOP';
+    }
+    if (y > 830) return 'REAR SPOILER & BUMPER';
+    return 'CHASSIS BODYWORK';
+  };
 
   // Redraw Canvas whenever liveryState changes
   const drawCanvas = useCallback(() => {
@@ -86,7 +109,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     ctx.fillRect(0, H * 0.9, W, H * 0.1);
     ctx.restore();
 
-    // 3. PAINT FINISH OVERLAYS (Matte, Metallic, Pearlescent, Chameleon, Carbon, Rust)
+    // 3. PAINT FINISH OVERLAYS
     ctx.save();
     if (liveryState.finish === 'pearlescent') {
       const grad = ctx.createLinearGradient(0, 0, W, H);
@@ -132,6 +155,22 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     }
     ctx.restore();
 
+    // 3b. UNLAYER IMAGE EDITOR OVERLAY — drawn below decals, above paint
+    if (liveryState.unlayerOverlayUrl) {
+      const img = new Image();
+      img.src = liveryState.unlayerOverlayUrl;
+      // Draw synchronously if already cached in browser, otherwise skip frame
+      // (next drawCanvas call triggered by state update will catch it)
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.drawImage(img, 0, 0, W, H);
+        ctx.restore();
+      } else {
+        img.onload = () => drawCanvas();
+      }
+    }
+
     // 4. DRAW DECALS IN Z-INDEX ORDER
     const sortedDecals = [...liveryState.decals].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -159,7 +198,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
         ctx.shadowBlur = 8;
         ctx.fillText(decal.customText || decal.name, 0, 0);
       } else if (def?.pathSvg) {
-        // Draw SVG path graphic (centered at 0,0 origin)
+        // Draw SVG path graphic
         const path2d = new Path2D(def.pathSvg);
         ctx.fillStyle = decal.color;
         ctx.shadowColor = decal.color;
@@ -175,29 +214,85 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       onCanvasRender(canvas);
     }
 
-    // 5. DRAW VEHICLE UV PANEL OUTLINE GUIDES (If enabled)
+    // 5. DRAW VEHICLE UV BLUEPRINT WIREFRAME GUIDES (If enabled)
     if (localShowGuides) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
       ctx.lineWidth = 2;
-      ctx.setLineDash([6, 6]);
+      ctx.setLineDash([8, 6]);
 
-      // Hood region
-      ctx.strokeRect(W * 0.25, H * 0.05, W * 0.5, H * 0.35);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.7)';
-      ctx.font = '14px Orbitron';
-      ctx.fillText('[ HOOD / FRONT BONNET ]', W * 0.26, H * 0.08);
+      // Technical blueprint grid background
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      for (let gx = 128; gx < W; gx += 128) {
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, H);
+        ctx.stroke();
+      }
+      for (let gy = 128; gy < H; gy += 128) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(W, gy);
+        ctx.stroke();
+      }
 
-      // Doors region (Left & Right)
-      ctx.strokeRect(W * 0.05, H * 0.45, W * 0.42, H * 0.35);
-      ctx.fillText('[ LEFT DOOR PANEL ]', W * 0.07, H * 0.48);
+      // Panel outlines with cyan neon glow
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 4]);
 
-      ctx.strokeRect(W * 0.53, H * 0.45, W * 0.42, H * 0.35);
-      ctx.fillText('[ RIGHT DOOR PANEL ]', W * 0.55, H * 0.48);
+      // 1. Hood Region
+      ctx.strokeRect(W * 0.22, H * 0.04, W * 0.56, H * 0.36);
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
+      ctx.font = 'bold 13px Orbitron';
+      ctx.fillText('[ FRONT HOOD / BONNET ]', W * 0.25, H * 0.08);
+      ctx.font = '10px monospace';
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
+      ctx.fillText('UV: (0.22, 0.04) → (0.78, 0.40)', W * 0.25, H * 0.11);
 
-      // Rear wing & bumper
-      ctx.strokeRect(W * 0.2, H * 0.85, W * 0.6, H * 0.12);
-      ctx.fillText('[ REAR BUMPER & SPOILER ]', W * 0.22, H * 0.88);
+      // 2. Left Door Panel
+      ctx.strokeRect(W * 0.04, H * 0.44, W * 0.42, H * 0.36);
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
+      ctx.font = 'bold 13px Orbitron';
+      ctx.fillText('[ LEFT DOOR & FLANK ]', W * 0.06, H * 0.48);
+      ctx.font = '10px monospace';
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
+      ctx.fillText('UV: (0.04, 0.44) → (0.46, 0.80)', W * 0.06, H * 0.51);
+
+      // 3. Right Door Panel
+      ctx.strokeRect(W * 0.54, H * 0.44, W * 0.42, H * 0.36);
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
+      ctx.font = 'bold 13px Orbitron';
+      ctx.fillText('[ RIGHT DOOR & FLANK ]', W * 0.56, H * 0.48);
+      ctx.font = '10px monospace';
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
+      ctx.fillText('UV: (0.54, 0.44) → (0.96, 0.80)', W * 0.56, H * 0.51);
+
+      // 4. Center Roof & Deck
+      ctx.strokeStyle = 'rgba(255, 0, 127, 0.5)';
+      ctx.strokeRect(W * 0.42, H * 0.44, W * 0.16, H * 0.36);
+      ctx.fillStyle = 'rgba(255, 0, 127, 0.8)';
+      ctx.fillText('[ ROOF ]', W * 0.45, H * 0.62);
+
+      // 5. Rear Bumper & Spoiler
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+      ctx.strokeRect(W * 0.18, H * 0.84, W * 0.64, H * 0.13);
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
+      ctx.font = 'bold 13px Orbitron';
+      ctx.fillText('[ REAR BUMPER & SPOILER DECK ]', W * 0.22, H * 0.88);
+
+      // Center crosshair
+      ctx.strokeStyle = 'rgba(255, 234, 0, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(W / 2, 0);
+      ctx.lineTo(W / 2, H);
+      ctx.moveTo(0, H / 2);
+      ctx.lineTo(W, H / 2);
+      ctx.stroke();
 
       ctx.restore();
     }
@@ -248,7 +343,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     drawCanvas();
   }, [drawCanvas]);
 
-  // --- MULTI-TOUCH & POINTER INTERACTION FOR DECAL DRAGGING & PINCH TRANSFORMS ---
+  // --- MULTI-TOUCH & POINTER INTERACTION WITH REAL-TIME VX TRACKING ---
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -260,8 +355,11 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
 
     const rect = canvas.getBoundingClientRect();
     const scale = 1024 / rect.width;
-    const clickX = (e.clientX - rect.left) * scale;
-    const clickY = (e.clientY - rect.top) * scale;
+    const clickX = Math.round((e.clientX - rect.left) * scale);
+    const clickY = Math.round((e.clientY - rect.top) * scale);
+
+    setHoverCoords({ x: clickX, y: clickY });
+    setActivePanel(resolvePanelName(clickX, clickY, liveryState.vehicle));
 
     activePointers.current.set(e.pointerId, { x: clickX, y: clickY });
 
@@ -335,8 +433,11 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
 
     const rect = canvas.getBoundingClientRect();
     const scale = 1024 / rect.width;
-    const currX = (e.clientX - rect.left) * scale;
-    const currY = (e.clientY - rect.top) * scale;
+    const currX = Math.round((e.clientX - rect.left) * scale);
+    const currY = Math.round((e.clientY - rect.top) * scale);
+
+    setHoverCoords({ x: currX, y: currY });
+    setActivePanel(resolvePanelName(currX, currY, liveryState.vehicle));
 
     if (activePointers.current.has(e.pointerId)) {
       activePointers.current.set(e.pointerId, { x: currX, y: currY });
@@ -398,7 +499,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       className="relative w-full h-full flex flex-col items-center justify-center bg-[#0d0d18] p-2 sm:p-3 rounded-xl border border-vice-border shadow-2xl overflow-hidden"
     >
       {/* FLOATING HUD CONTROLS OVER CANVAS */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md p-1.5 rounded-xl border border-vice-border shadow-lg">
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-black/85 backdrop-blur-md p-1.5 rounded-xl border border-vice-border shadow-lg">
         {onUndo && (
           <button
             onClick={onUndo}
@@ -408,7 +509,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
               canUndo ? 'text-vice-pink hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
             }`}
           >
-            <Undo2 size={16} />
+            <Undo2 size={15} />
           </button>
         )}
 
@@ -421,7 +522,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
               canRedo ? 'text-vice-cyan hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
             }`}
           >
-            <Redo2 size={16} />
+            <Redo2 size={15} />
           </button>
         )}
 
@@ -432,7 +533,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
           title="Zoom In"
           className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
         >
-          <ZoomIn size={16} />
+          <ZoomIn size={15} />
         </button>
 
         <button
@@ -440,7 +541,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
           title="Zoom Out"
           className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
         >
-          <ZoomOut size={16} />
+          <ZoomOut size={15} />
         </button>
 
         <button
@@ -448,7 +549,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
           title="Reset Zoom"
           className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
         >
-          <RotateCcw size={15} />
+          <RotateCcw size={14} />
         </button>
 
         <div className="w-[1px] h-4 bg-gray-700 mx-0.5" />
@@ -460,11 +561,32 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
           }}
           title={localShowGuides ? 'Hide UV Guides' : 'Show UV Guides'}
           className={`p-1.5 rounded-lg transition-all ${
-            localShowGuides ? 'text-vice-cyan hover:bg-vice-cyan/20' : 'text-gray-500 hover:text-gray-300'
+            localShowGuides ? 'text-vice-cyan bg-vice-cyan/20 border border-vice-cyan/40' : 'text-gray-500 hover:text-gray-300'
           }`}
         >
-          {localShowGuides ? <Eye size={16} /> : <EyeOff size={16} />}
+          {localShowGuides ? <Eye size={15} /> : <EyeOff size={15} />}
         </button>
+
+        {onOpenExportModal && (
+          <>
+            <div className="w-[1px] h-4 bg-gray-700 mx-0.5" />
+            <button
+              onClick={onOpenExportModal}
+              title="Ready to Print & Export Studio"
+              className="px-2 py-1 bg-vice-pink/20 hover:bg-vice-pink text-vice-pink hover:text-white rounded-lg text-[10px] font-vice font-bold transition-all border border-vice-pink/40 shadow-neon-pink flex items-center gap-1 cursor-pointer"
+            >
+              <Printer size={13} />
+              <span className="hidden sm:inline">READY TO PRINT</span>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* TOP LEFT: ACTIVE VEHICLE & UV BADGE */}
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-vice-cyan/40 shadow-lg text-xs font-vice text-vice-cyan">
+        <span className="w-2 h-2 rounded-full bg-vice-cyan animate-ping" />
+        <span className="font-bold">{liveryState.vehicle.toUpperCase()} UV MAP</span>
+        <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">(1024×1024)</span>
       </div>
 
       {/* CANVAS CONTAINER WITH SMOOTH TRANSFORM */}
@@ -483,18 +605,42 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
           className="w-full h-full cursor-crosshair touch-none bg-black"
         />
 
-        {/* Dynamic Scanline & Grid HUD Overlay */}
+        {/* Dynamic Holographic Scanline Overlay */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.25)_51%)] bg-[length:100%_4px]" />
-
-        <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1 rounded text-xs font-vice text-vice-cyan border border-vice-cyan/30 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-vice-cyan animate-ping" />
-          2D UV TEXTURE CANVAS (1024x1024)
-        </div>
       </div>
 
-      <div className="mt-3 text-xs text-gray-400 font-sans flex items-center justify-between w-full max-w-[560px] px-1">
-        <span>💡 Drag decal to move • Pinch / 2 fingers to scale &amp; rotate</span>
-        <span className="text-vice-pink font-semibold">Live 3D Sync Active</span>
+      {/* MODERN VX HUD / ACTIVE PANEL & PIXEL TELEMETRY BAR */}
+      <div className="mt-2.5 w-full max-w-[560px] flex items-center justify-between px-2 py-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-gray-800 text-[11px] font-mono text-gray-300">
+        <div className="flex items-center gap-1.5 font-vice text-vice-pink font-bold">
+          <MapPin size={13} className="text-vice-pink animate-pulse" />
+          <span>{activePanel}</span>
+        </div>
+
+        {hoverCoords && (
+          <div className="flex items-center gap-3 text-[10px] text-gray-400">
+            <span className="text-vice-cyan font-bold">
+              X: {hoverCoords.x}px • Y: {hoverCoords.y}px
+            </span>
+            <span className="hidden sm:inline text-gray-500">
+              UV: [{(hoverCoords.x / 1024).toFixed(2)}, {(hoverCoords.y / 1024).toFixed(2)}]
+            </span>
+          </div>
+        )}
+
+        {onOpenExportModal ? (
+          <button
+            onClick={onOpenExportModal}
+            className="px-2 py-0.5 bg-vice-pink hover:bg-pink-600 text-white rounded-lg text-[10px] font-vice font-bold flex items-center gap-1 shadow-neon-pink transition-transform hover:scale-105 cursor-pointer"
+            title="Open Ready to Print & Export Studio"
+          >
+            <Printer size={12} />
+            <span>READY TO PRINT 🖨️</span>
+          </button>
+        ) : (
+          <div className="text-[10px] font-vice text-vice-yellow font-bold hidden sm:block">
+            {selectedDecal ? `${selectedDecal.name.slice(0, 14)} (${selectedDecal.scaleX.toFixed(1)}x)` : 'READY TO PAINT'}
+          </div>
+        )}
       </div>
     </div>
   );
