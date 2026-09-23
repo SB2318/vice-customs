@@ -13,6 +13,7 @@ import { ExportModal } from './components/UI/ExportModal';
 import { VehicleTransitionLoader } from './components/UI/VehicleTransitionLoader';
 import { OnboardingTourModal } from './components/UI/OnboardingTourModal';
 import { KeyboardShortcutsModal } from './components/UI/KeyboardShortcutsModal';
+import { ViceOutrunGameModal } from './components/UI/ViceOutrunGameModal';
 import { GripVertical, GripHorizontal, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Mobile-only bottom tab
@@ -60,6 +61,7 @@ export const App: React.FC = () => {
 
   const isDraggingMainSplit = useRef(false);
   const isDraggingVerticalSplit = useRef(false);
+  const [isSplitDragging, setIsSplitDragging] = useState(false);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +69,7 @@ export const App: React.FC = () => {
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isGameOpen, setIsGameOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
     return !localStorage.getItem('vice_onboarded');
   });
@@ -111,10 +114,14 @@ export const App: React.FC = () => {
         return;
       }
 
+      // Test Drive Arcade Game shortcut (G)
+      if ((e.key === 'g' || e.key === 'G') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setIsGameOpen(prev => !prev);
+        return;
+      }
+
       // Studio FX shortcuts
       if (e.key === 'r' || e.key === 'R') {
-        // Rev engine shortcut — dispatched via Header; just trigger handleUpdateLiveryState noop here
-        // Real rev is handled inside Header's own button; we skip to avoid double trigger
         return;
       }
       if (e.key === 'u' || e.key === 'U') {
@@ -193,11 +200,13 @@ export const App: React.FC = () => {
   // ─── DRAG EVENT LISTENERS FOR SPLITTERS ─────────────────────────────────────
   const handleStartMainSplitDrag = (e: React.PointerEvent) => {
     isDraggingMainSplit.current = true;
+    setIsSplitDragging(true);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handleStartVerticalSplitDrag = (e: React.PointerEvent) => {
     isDraggingVerticalSplit.current = true;
+    setIsSplitDragging(true);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
@@ -225,12 +234,15 @@ export const App: React.FC = () => {
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    isDraggingMainSplit.current = false;
-    isDraggingVerticalSplit.current = false;
-    try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // ignore
+    if (isDraggingMainSplit.current || isDraggingVerticalSplit.current) {
+      isDraggingMainSplit.current = false;
+      isDraggingVerticalSplit.current = false;
+      setIsSplitDragging(false);
+      try {
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
     }
   };
 
@@ -251,6 +263,7 @@ export const App: React.FC = () => {
         onSelectViewMode={setViewMode}
         onOpenPresetsModal={() => setIsPresetsOpen(true)}
         onOpenExportModal={() => setIsExportOpen(true)}
+        onOpenGameModal={() => setIsGameOpen(true)}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}
@@ -379,6 +392,7 @@ export const App: React.FC = () => {
           className={`
             ${show3D ? 'flex' : 'hidden'}
             ${mobileTab === '3d' ? 'w-full flex' : 'hidden lg:flex'}
+            ${isSplitDragging ? 'pointer-events-none select-none' : ''}
             flex-col flex-1
             h-full
             min-w-0
@@ -439,6 +453,14 @@ export const App: React.FC = () => {
         canvasElement={canvasElement}
         liveryState={liveryState}
         onLoadLivery={handleLoadLiveryPreset}
+      />
+
+      {/* 🏎️ VICE OUTRUN HIGHWAY SPEED TRIAL ARCADE GAME */}
+      <ViceOutrunGameModal
+        isOpen={isGameOpen}
+        onClose={() => setIsGameOpen(false)}
+        liveryState={liveryState}
+        canvasElement={canvasElement}
       />
 
 

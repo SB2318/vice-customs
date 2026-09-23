@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { LiveryState, DecalLayer, VehicleModel } from '../../types';
 import { DECAL_LIBRARY } from '../../utils/decalLibrary';
-import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Eye, EyeOff, Crosshair, MapPin, Printer, Download } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Eye, EyeOff, MapPin, Printer, Compass, Maximize, Minimize, X } from 'lucide-react';
 
 interface LiveryCanvasProps {
   liveryState: LiveryState;
@@ -16,6 +16,277 @@ interface LiveryCanvasProps {
   canUndo?: boolean;
   canRedo?: boolean;
   onOpenExportModal?: () => void;
+}
+
+// ─── Blueprint Panel Layout (1024 × 1024 canvas) ──────────────────────────
+// Cross formation:
+//
+//           [TOP]              col: 342–682   row: 0–256
+//   [WEST] [SIDE_L] [EAST]    col: 0–1024    row: 256–576
+//           [FRONT]            col: 342–682   row: 576–768
+//           [REAR]             col: 342–682   row: 768–1024
+//
+// Actually use a cleaner 5-zone layout:
+//   TOP:    x 300-724,  y 20-236
+//   SIDE_L: x 0-512,    y 256-580
+//   SIDE_R: x 512-1024, y 256-580  (mirror — passenger side)
+//   FRONT:  x 300-724,  y 596-788
+//   REAR:   x 300-724,  y 808-1004
+// ─────────────────────────────────────────────────────────────────────────
+
+const PANELS = {
+  TOP:    { x: 300, y: 20,  w: 424, h: 216, label: 'ROOF / TOP',        dir: 'N',  color: '#00f0ff' },
+  SIDE_L: { x: 0,   y: 256, w: 512, h: 324, label: 'DRIVER SIDE (EAST)', dir: 'E',  color: '#39ff14' },
+  SIDE_R: { x: 512, y: 256, w: 512, h: 324, label: 'PASS SIDE (WEST)',   dir: 'W',  color: '#ff5500' },
+  FRONT:  { x: 300, y: 596, w: 424, h: 192, label: 'FRONT (NORTH)',      dir: 'N↑', color: '#ff007f' },
+  REAR:   { x: 300, y: 808, w: 424, h: 196, label: 'REAR (SOUTH)',       dir: 'S↓', color: '#ffea00' },
+};
+
+type PanelKey = keyof typeof PANELS;
+
+function getPanelAtPoint(x: number, y: number): PanelKey | null {
+  for (const [key, p] of Object.entries(PANELS)) {
+    if (x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h) {
+      return key as PanelKey;
+    }
+  }
+  return null;
+}
+
+function resolvePanelName(x: number, y: number, _vehicle: VehicleModel): string {
+  const panel = getPanelAtPoint(x, y);
+  if (!panel) return 'CHASSIS BODY';
+  return PANELS[panel].label;
+}
+
+// ─── Draw a single car panel silhouette (car shape outline) ───────────────
+function drawCarSilhouette(
+  ctx: CanvasRenderingContext2D,
+  px: number, py: number, pw: number, ph: number,
+  view: 'top' | 'side' | 'front' | 'rear',
+  primaryColor: string,
+  secondaryColor: string
+) {
+  ctx.save();
+  ctx.translate(px, py);
+
+  if (view === 'side') {
+    // Side profile — realistic car silhouette
+    ctx.beginPath();
+    const bx = 0, by = ph * 0.25, bw = pw, bh = ph * 0.75; // body base
+    // Body lower rectangle
+    ctx.fillStyle = primaryColor;
+    // Full body rect
+    ctx.fillRect(bx + pw * 0.04, by + ph * 0.22, pw * 0.92, ph * 0.5);
+    // Cabin roof trapezoid
+    ctx.beginPath();
+    ctx.moveTo(pw * 0.18, by + ph * 0.22);
+    ctx.lineTo(pw * 0.82, by + ph * 0.22);
+    ctx.lineTo(pw * 0.72, by - ph * 0.05);
+    ctx.lineTo(pw * 0.28, by - ph * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    // Windshield outline
+    ctx.strokeStyle = 'rgba(0,240,255,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pw * 0.28, by + ph * 0.22);
+    ctx.lineTo(pw * 0.33, by - ph * 0.04);
+    ctx.lineTo(pw * 0.46, by - ph * 0.04);
+    ctx.lineTo(pw * 0.42, by + ph * 0.22);
+    ctx.stroke();
+    // Rear window
+    ctx.beginPath();
+    ctx.moveTo(pw * 0.62, by + ph * 0.22);
+    ctx.lineTo(pw * 0.58, by - ph * 0.04);
+    ctx.lineTo(pw * 0.71, by - ph * 0.04);
+    ctx.lineTo(pw * 0.76, by + ph * 0.22);
+    ctx.stroke();
+    // Door line
+    ctx.strokeStyle = secondaryColor + '66';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pw * 0.50, by + ph * 0.22);
+    ctx.lineTo(pw * 0.50, by + ph * 0.72);
+    ctx.stroke();
+    // Wheels
+    ctx.fillStyle = '#111';
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2;
+    [[pw * 0.18, ph * 0.84], [pw * 0.82, ph * 0.84]].forEach(([wx, wy]) => {
+      ctx.beginPath();
+      ctx.arc(wx, wy, ph * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Wheel rim
+      ctx.beginPath();
+      ctx.arc(wx, wy, ph * 0.07, 0, Math.PI * 2);
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    // Secondary accent — side stripe
+    ctx.fillStyle = secondaryColor + '55';
+    ctx.fillRect(pw * 0.04, by + ph * 0.35, pw * 0.92, ph * 0.1);
+
+  } else if (view === 'top') {
+    // Aerial / top-down view
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.08, ph * 0.06, pw * 0.84, ph * 0.88, [pw * 0.06, pw * 0.06, pw * 0.08, pw * 0.08]);
+    ctx.fill();
+    // Windshield band
+    ctx.fillStyle = 'rgba(0,200,255,0.22)';
+    ctx.fillRect(pw * 0.1, ph * 0.1, pw * 0.8, ph * 0.2);
+    // Rear glass
+    ctx.fillRect(pw * 0.1, ph * 0.72, pw * 0.8, ph * 0.16);
+    // Center dividing rib
+    ctx.fillStyle = secondaryColor + '44';
+    ctx.fillRect(pw * 0.46, ph * 0.06, pw * 0.08, ph * 0.88);
+    // Door seam lines
+    ctx.strokeStyle = 'rgba(0,240,255,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pw * 0.08, ph * 0.44);
+    ctx.lineTo(pw * 0.92, ph * 0.44);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+  } else if (view === 'front') {
+    // Front fascia
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.06, ph * 0.12, pw * 0.88, ph * 0.68, 8);
+    ctx.fill();
+    // Windshield band
+    ctx.fillStyle = 'rgba(0,200,255,0.22)';
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.14, ph * 0.08, pw * 0.72, ph * 0.44, 6);
+    ctx.fill();
+    // Hood center line
+    ctx.strokeStyle = secondaryColor + '55';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pw * 0.5, ph * 0.12);
+    ctx.lineTo(pw * 0.5, ph * 0.80);
+    ctx.stroke();
+    // Left headlight
+    ctx.fillStyle = '#ffffcc';
+    ctx.beginPath();
+    ctx.ellipse(pw * 0.2, ph * 0.64, pw * 0.11, ph * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Right headlight
+    ctx.beginPath();
+    ctx.ellipse(pw * 0.8, ph * 0.64, pw * 0.11, ph * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Grille
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.24, ph * 0.7, pw * 0.52, ph * 0.2, 4);
+    ctx.fill();
+    // Grille slats
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(pw * 0.24 + (pw * 0.52 / 5) * i, ph * 0.7);
+      ctx.lineTo(pw * 0.24 + (pw * 0.52 / 5) * i, ph * 0.9);
+      ctx.stroke();
+    }
+
+  } else if (view === 'rear') {
+    // Rear fascia
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.06, ph * 0.12, pw * 0.88, ph * 0.68, 8);
+    ctx.fill();
+    // Rear glass
+    ctx.fillStyle = 'rgba(0,200,255,0.22)';
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.16, ph * 0.12, pw * 0.68, ph * 0.36, 5);
+    ctx.fill();
+    // Spoiler bar
+    ctx.fillStyle = secondaryColor;
+    ctx.fillRect(pw * 0.06, ph * 0.1, pw * 0.88, ph * 0.06);
+    // Left tail light
+    ctx.fillStyle = '#ff2200';
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.06, ph * 0.55, pw * 0.22, ph * 0.14, 3);
+    ctx.fill();
+    // Right tail light
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.72, ph * 0.55, pw * 0.22, ph * 0.14, 3);
+    ctx.fill();
+    // Diffuser / bumper
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.roundRect(pw * 0.1, ph * 0.76, pw * 0.8, ph * 0.16, 4);
+    ctx.fill();
+    // Exhaust pipes
+    ctx.fillStyle = '#333';
+    [[pw * 0.22, ph * 0.84], [pw * 0.78, ph * 0.84]].forEach(([ex, ey]) => {
+      ctx.beginPath();
+      ctx.arc(ex, ey, pw * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+  }
+
+  ctx.restore();
+}
+
+// ─── Compass Rose ──────────────────────────────────────────────────────────
+function drawCompassRose(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0,240,255,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Cardinal directions
+  const dirs: [string, number, string][] = [
+    ['N', -Math.PI / 2, '#ff007f'],
+    ['S',  Math.PI / 2, '#ffea00'],
+    ['E',  0,           '#39ff14'],
+    ['W',  Math.PI,     '#ff5500'],
+  ];
+  dirs.forEach(([label, angle, color]) => {
+    const nx = Math.cos(angle) * (r - 3);
+    const ny = Math.sin(angle) * (r - 3);
+    // Arrow pointer
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(r * 0.35, 0);
+    ctx.lineTo(r * 0.85, -r * 0.18);
+    ctx.lineTo(r * 0.95, 0);
+    ctx.lineTo(r * 0.85, r * 0.18);
+    ctx.closePath();
+    ctx.fillStyle = color + 'bb';
+    ctx.fill();
+    ctx.restore();
+    // Label
+    ctx.fillStyle = color;
+    ctx.font = `bold ${Math.round(r * 0.38)}px Orbitron, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, nx * 0.65, ny * 0.65);
+  });
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(0, 0, 3, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,240,255,0.8)';
+  ctx.fill();
+
+  ctx.restore();
 }
 
 export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
@@ -42,128 +313,132 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0
   });
 
-  // Real-time VX tracking
   const [hoverCoords, setHoverCoords] = useState<{ x: number; y: number } | null>({ x: 512, y: 512 });
-  const [activePanel, setActivePanel] = useState<string>('HOOD BONNET');
+  const [activePanel, setActivePanel] = useState<string>('DRIVER SIDE (EAST)');
+  const [activeCompassDir, setActiveCompassDir] = useState<string>('E');
 
-  // Multi-touch tracking
   const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStart = useRef<{ dist: number; angle: number; scaleX: number; scaleY: number; rotation: number }>({
-    dist: 0,
-    angle: 0,
-    scaleX: 1,
-    scaleY: 1,
-    rotation: 0
+    dist: 0, angle: 0, scaleX: 1, scaleY: 1, rotation: 0
   });
 
   const [canvasZoom, setCanvasZoom] = useState(1);
   const [localShowGuides, setLocalShowGuides] = useState(showGuides);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Keyboard shortcut listener for Fullscreen (ESC to exit, F to toggle)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          setIsFullscreen(prev => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
 
   const selectedDecal = liveryState.decals.find(d => d.id === selectedDecalId);
 
-  // Helper to resolve panel based on 2D coordinates
-  const resolvePanelName = (x: number, y: number, vehicle: VehicleModel): string => {
-    if (vehicle === 'dirtbike') {
-      if (y < 400) return 'FRONT NUMBER PLATE & FORKS';
-      if (y >= 400 && y <= 750) return x < 512 ? 'LEFT TANK SHROUD' : 'RIGHT TANK SHROUD';
-      return 'REAR FENDER & EXHAUST';
-    }
-    if (y < 420 && x >= 200 && x <= 824) return 'HOOD / FRONT BONNET';
-    if (y >= 420 && y <= 830) {
-      if (x <= 480) return 'LEFT DOOR & SIDE SILL';
-      if (x >= 544) return 'RIGHT DOOR & SIDE SILL';
-      return 'ROOF & CABIN TOP';
-    }
-    if (y > 830) return 'REAR SPOILER & BUMPER';
-    return 'CHASSIS BODYWORK';
-  };
-
-  // Redraw Canvas whenever liveryState changes
+  // ── Main Canvas Draw ───────────────────────────────────────────────────
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Canvas Size 1024x1024 for sharp UV texture mapping
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = canvas.width;   // 1024
+    const H = canvas.height;  // 1024
 
-    // 1. CLEAR & PRIMARY PAINT COAT
-    ctx.fillStyle = liveryState.primaryColor;
+    // Background — dark blueprint grid
+    ctx.fillStyle = '#0a0a16';
     ctx.fillRect(0, 0, W, H);
 
-    // 2. DUAL TONE SECONDARY ACCENT SECTIONS (Hood/Roof/Side)
-    ctx.save();
-    ctx.fillStyle = liveryState.secondaryColor;
-    // Hood wedge accent
-    ctx.beginPath();
-    ctx.moveTo(W * 0.3, 0);
-    ctx.lineTo(W * 0.7, 0);
-    ctx.lineTo(W * 0.6, H * 0.45);
-    ctx.lineTo(W * 0.4, H * 0.45);
-    ctx.closePath();
-    ctx.fill();
-
-    // Side sill accent lines
-    ctx.fillRect(0, H * 0.9, W, H * 0.1);
-    ctx.restore();
-
-    // 3. PAINT FINISH OVERLAYS
-    ctx.save();
-    if (liveryState.finish === 'pearlescent') {
-      const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, 'rgba(255,255,255,0)');
-      grad.addColorStop(0.5, liveryState.pearlescentColor + '55');
-      grad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    } else if (liveryState.finish === 'chameleon') {
-      const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, '#ff007f44');
-      grad.addColorStop(0.5, '#00f0ff44');
-      grad.addColorStop(1, '#9d00ff44');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    } else if (liveryState.finish === 'carbon') {
-      // Carbon fiber weave pattern
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      for (let x = 0; x < W; x += 8) {
-        for (let y = 0; y < H; y += 8) {
-          if ((x + y) % 16 === 0) {
-            ctx.fillRect(x, y, 4, 4);
-          }
-        }
-      }
-    } else if (liveryState.finish === 'rust') {
-      // Rust patina noise
-      ctx.fillStyle = 'rgba(139, 69, 19, 0.25)';
-      for (let i = 0; i < 2000; i++) {
-        const rx = Math.random() * W;
-        const ry = Math.random() * H;
-        const rSize = Math.random() * 8 + 2;
-        ctx.beginPath();
-        ctx.arc(rx, ry, rSize, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else if (liveryState.finish === 'metallic') {
-      // Subtle metallic sparkle
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-      for (let i = 0; i < 1500; i++) {
-        ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+    // Subtle blueprint dot grid
+    ctx.fillStyle = 'rgba(0,240,255,0.06)';
+    for (let gx = 0; gx < W; gx += 32) {
+      for (let gy = 0; gy < H; gy += 32) {
+        ctx.fillRect(gx, gy, 1, 1);
       }
     }
-    ctx.restore();
 
-    // 3b. UNLAYER IMAGE EDITOR OVERLAY — drawn below decals, above paint
+    const pc = liveryState.primaryColor;
+    const sc = liveryState.secondaryColor;
+
+    // ── Draw car silhouettes in each panel ────────────────────────────
+    const { TOP, SIDE_L, SIDE_R, FRONT, REAR } = PANELS;
+
+    // Apply paint finish overlay helper
+    const applyFinish = (px: number, py: number, pw: number, ph: number) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(px, py, pw, ph);
+      ctx.clip();
+      if (liveryState.finish === 'pearlescent') {
+        const grad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+        grad.addColorStop(0, 'rgba(255,255,255,0)');
+        grad.addColorStop(0.5, (liveryState.pearlescentColor || '#ffffff') + '44');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(px, py, pw, ph);
+      } else if (liveryState.finish === 'chameleon') {
+        const grad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+        grad.addColorStop(0, '#ff007f44');
+        grad.addColorStop(0.5, '#00f0ff44');
+        grad.addColorStop(1, '#9d00ff44');
+        ctx.fillStyle = grad;
+        ctx.fillRect(px, py, pw, ph);
+      } else if (liveryState.finish === 'carbon') {
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        for (let x2 = px; x2 < px + pw; x2 += 6) {
+          for (let y2 = py; y2 < py + ph; y2 += 6) {
+            if (((x2 - px) + (y2 - py)) % 12 === 0) ctx.fillRect(x2, y2, 3, 3);
+          }
+        }
+      } else if (liveryState.finish === 'metallic') {
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        for (let i = 0; i < 400; i++) {
+          ctx.fillRect(px + Math.random() * pw, py + Math.random() * ph, 2, 2);
+        }
+      } else if (liveryState.finish === 'rust') {
+        ctx.fillStyle = 'rgba(139,69,19,0.2)';
+        for (let i = 0; i < 300; i++) {
+          const rx = px + Math.random() * pw;
+          const ry = py + Math.random() * ph;
+          ctx.beginPath();
+          ctx.arc(rx, ry, Math.random() * 5 + 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    };
+
+    // Draw each panel
+    drawCarSilhouette(ctx, TOP.x,    TOP.y,    TOP.w,    TOP.h,    'top',   pc, sc);
+    drawCarSilhouette(ctx, SIDE_L.x, SIDE_L.y, SIDE_L.w, SIDE_L.h, 'side',  pc, sc);
+    drawCarSilhouette(ctx, SIDE_R.x, SIDE_R.y, SIDE_R.w, SIDE_R.h, 'side',  pc, sc);
+    drawCarSilhouette(ctx, FRONT.x,  FRONT.y,  FRONT.w,  FRONT.h,  'front', pc, sc);
+    drawCarSilhouette(ctx, REAR.x,   REAR.y,   REAR.w,   REAR.h,   'rear',  pc, sc);
+
+    // Apply finish overlays to each panel
+    applyFinish(TOP.x,    TOP.y,    TOP.w,    TOP.h);
+    applyFinish(SIDE_L.x, SIDE_L.y, SIDE_L.w, SIDE_L.h);
+    applyFinish(SIDE_R.x, SIDE_R.y, SIDE_R.w, SIDE_R.h);
+    applyFinish(FRONT.x,  FRONT.y,  FRONT.w,  FRONT.h);
+    applyFinish(REAR.x,   REAR.y,   REAR.w,   REAR.h);
+
+    // ── Unlayer image overlay ──────────────────────────────────────────
     if (liveryState.unlayerOverlayUrl) {
       const img = new Image();
       img.src = liveryState.unlayerOverlayUrl;
-      // Draw synchronously if already cached in browser, otherwise skip frame
-      // (next drawCanvas call triggered by state update will catch it)
       if (img.complete && img.naturalWidth > 0) {
         ctx.save();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 0.85;
         ctx.drawImage(img, 0, 0, W, H);
         ctx.restore();
       } else {
@@ -171,12 +446,10 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       }
     }
 
-    // 4. DRAW DECALS IN Z-INDEX ORDER
+    // ── Draw Decals ────────────────────────────────────────────────────
     const sortedDecals = [...liveryState.decals].sort((a, b) => a.zIndex - b.zIndex);
-
     sortedDecals.forEach(decal => {
       if (!decal.visible) return;
-
       ctx.save();
       ctx.translate(decal.x, decal.y);
       ctx.rotate((decal.rotation * Math.PI) / 180);
@@ -184,12 +457,9 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       ctx.globalAlpha = decal.opacity;
 
       const def = DECAL_LIBRARY.find(d => d.id === decal.assetId);
-
       if (decal.category === 'plate') {
-        // Draw License Plate Graphic
         drawLicensePlate(ctx, decal);
       } else if (decal.category === 'sponsor' || decal.category === 'text') {
-        // Draw Typography
         ctx.font = `bold 42px ${decal.fontFamily || 'Orbitron'}, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -198,106 +468,84 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
         ctx.shadowBlur = 8;
         ctx.fillText(decal.customText || decal.name, 0, 0);
       } else if (def?.pathSvg) {
-        // Draw SVG path graphic
         const path2d = new Path2D(def.pathSvg);
         ctx.fillStyle = decal.color;
         ctx.shadowColor = decal.color;
         ctx.shadowBlur = 4;
         ctx.fill(path2d);
       }
-
       ctx.restore();
     });
 
-    // Send CLEAN texture to 3D Three.js material & Exports BEFORE drawing overlays
-    if (onCanvasRender) {
-      onCanvasRender(canvas);
-    }
+    // Send texture to 3D scene
+    if (onCanvasRender) onCanvasRender(canvas);
 
-    // 5. DRAW VEHICLE UV BLUEPRINT WIREFRAME GUIDES (If enabled)
+    // ── Blueprint Panel Labels & Guides ────────────────────────────────
     if (localShowGuides) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 6]);
 
-      // Technical blueprint grid background
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      for (let gx = 128; gx < W; gx += 128) {
+      Object.entries(PANELS).forEach(([, p]) => {
+        // Panel border glow
+        ctx.strokeStyle = p.color + 'cc';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.strokeRect(p.x + 1, p.y + 1, p.w - 2, p.h - 2);
+
+        // Panel fill tint
+        ctx.fillStyle = p.color + '0d';
+        ctx.fillRect(p.x + 1, p.y + 1, p.w - 2, p.h - 2);
+
+        // Panel label chip
+        ctx.setLineDash([]);
+        const chipPad = 5;
+        const chipX = p.x + 6;
+        const chipY = p.y + 5;
+        ctx.font = 'bold 10px Orbitron, monospace';
+        const tw = ctx.measureText(p.label).width;
+        ctx.fillStyle = '#000000cc';
         ctx.beginPath();
-        ctx.moveTo(gx, 0);
-        ctx.lineTo(gx, H);
-        ctx.stroke();
-      }
-      for (let gy = 128; gy < H; gy += 128) {
-        ctx.beginPath();
-        ctx.moveTo(0, gy);
-        ctx.lineTo(W, gy);
-        ctx.stroke();
-      }
+        ctx.roundRect(chipX - chipPad, chipY - chipPad, tw + chipPad * 2, 20, 4);
+        ctx.fill();
+        ctx.fillStyle = p.color;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(p.label, chipX, chipY);
 
-      // Panel outlines with cyan neon glow
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([8, 4]);
+        // Direction badge (N / S / E / W)
+        ctx.font = 'bold 14px Orbitron, monospace';
+        ctx.fillStyle = p.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(p.dir, p.x + p.w - 6, p.y + 7);
+      });
 
-      // 1. Hood Region
-      ctx.strokeRect(W * 0.22, H * 0.04, W * 0.56, H * 0.36);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
-      ctx.font = 'bold 13px Orbitron';
-      ctx.fillText('[ FRONT HOOD / BONNET ]', W * 0.25, H * 0.08);
-      ctx.font = '10px monospace';
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
-      ctx.fillText('UV: (0.22, 0.04) → (0.78, 0.40)', W * 0.25, H * 0.11);
-
-      // 2. Left Door Panel
-      ctx.strokeRect(W * 0.04, H * 0.44, W * 0.42, H * 0.36);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
-      ctx.font = 'bold 13px Orbitron';
-      ctx.fillText('[ LEFT DOOR & FLANK ]', W * 0.06, H * 0.48);
-      ctx.font = '10px monospace';
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
-      ctx.fillText('UV: (0.04, 0.44) → (0.46, 0.80)', W * 0.06, H * 0.51);
-
-      // 3. Right Door Panel
-      ctx.strokeRect(W * 0.54, H * 0.44, W * 0.42, H * 0.36);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
-      ctx.font = 'bold 13px Orbitron';
-      ctx.fillText('[ RIGHT DOOR & FLANK ]', W * 0.56, H * 0.48);
-      ctx.font = '10px monospace';
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
-      ctx.fillText('UV: (0.54, 0.44) → (0.96, 0.80)', W * 0.56, H * 0.51);
-
-      // 4. Center Roof & Deck
-      ctx.strokeStyle = 'rgba(255, 0, 127, 0.5)';
-      ctx.strokeRect(W * 0.42, H * 0.44, W * 0.16, H * 0.36);
-      ctx.fillStyle = 'rgba(255, 0, 127, 0.8)';
-      ctx.fillText('[ ROOF ]', W * 0.45, H * 0.62);
-
-      // 5. Rear Bumper & Spoiler
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
-      ctx.strokeRect(W * 0.18, H * 0.84, W * 0.64, H * 0.13);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
-      ctx.font = 'bold 13px Orbitron';
-      ctx.fillText('[ REAR BUMPER & SPOILER DECK ]', W * 0.22, H * 0.88);
-
-      // Center crosshair
-      ctx.strokeStyle = 'rgba(255, 234, 0, 0.4)';
+      // Connector dashed lines between panels
+      ctx.strokeStyle = 'rgba(0,240,255,0.15)';
       ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([4, 8]);
+      // TOP → SIDE_L connector
       ctx.beginPath();
-      ctx.moveTo(W / 2, 0);
-      ctx.lineTo(W / 2, H);
-      ctx.moveTo(0, H / 2);
-      ctx.lineTo(W, H / 2);
+      ctx.moveTo(PANELS.TOP.x, PANELS.TOP.y + PANELS.TOP.h);
+      ctx.lineTo(PANELS.SIDE_L.x + PANELS.SIDE_L.w, PANELS.SIDE_L.y);
       ctx.stroke();
+      // TOP → SIDE_R connector
+      ctx.beginPath();
+      ctx.moveTo(PANELS.TOP.x + PANELS.TOP.w, PANELS.TOP.y + PANELS.TOP.h);
+      ctx.lineTo(PANELS.SIDE_R.x, PANELS.SIDE_R.y);
+      ctx.stroke();
+      // SIDE → FRONT connector
+      ctx.beginPath();
+      ctx.moveTo(PANELS.SIDE_L.x + PANELS.SIDE_L.w / 2, PANELS.SIDE_L.y + PANELS.SIDE_L.h);
+      ctx.lineTo(PANELS.FRONT.x + PANELS.FRONT.w / 2, PANELS.FRONT.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
       ctx.restore();
     }
 
-    // 6. DRAW SELECTION HANDLES FOR ACTIVE DECAL
+    // ── Compass Rose (bottom-right corner) ────────────────────────────
+    drawCompassRose(ctx, W - 54, H - 54, 42);
+
+    // ── Selection Handles ──────────────────────────────────────────────
     if (selectedDecal && selectedDecal.visible) {
       ctx.save();
       ctx.translate(selectedDecal.x, selectedDecal.y);
@@ -306,30 +554,26 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       const handleW = 140 * selectedDecal.scaleX;
       const handleH = 100 * selectedDecal.scaleY;
 
-      // Selection bounding box
       ctx.strokeStyle = '#ff007f';
       ctx.lineWidth = 3;
       ctx.setLineDash([]);
       ctx.strokeRect(-handleW / 2, -handleH / 2, handleW, handleH);
 
-      // Corner handles
       ctx.fillStyle = '#ff007f';
-      const corners = [
+      const corners: [number, number][] = [
         [-handleW / 2, -handleH / 2],
         [handleW / 2, -handleH / 2],
         [handleW / 2, handleH / 2],
         [-handleW / 2, handleH / 2]
       ];
-      corners.forEach(([cx, cy]) => {
-        ctx.fillRect(cx - 6, cy - 6, 12, 12);
-      });
+      corners.forEach(([cx, cy]) => ctx.fillRect(cx - 6, cy - 6, 12, 12));
 
-      // Rotation stem & knob
+      // Rotation knob
       ctx.beginPath();
       ctx.moveTo(0, -handleH / 2);
       ctx.lineTo(0, -handleH / 2 - 30);
+      ctx.strokeStyle = '#ff007f';
       ctx.stroke();
-
       ctx.beginPath();
       ctx.arc(0, -handleH / 2 - 30, 8, 0, Math.PI * 2);
       ctx.fillStyle = '#00f0ff';
@@ -343,15 +587,11 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     drawCanvas();
   }, [drawCanvas]);
 
-  // --- MULTI-TOUCH & POINTER INTERACTION WITH REAL-TIME VX TRACKING ---
+  // ── Pointer Interaction ────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    try {
-      canvas.setPointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
+    try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
 
     const rect = canvas.getBoundingClientRect();
     const scale = 1024 / rect.width;
@@ -359,69 +599,44 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     const clickY = Math.round((e.clientY - rect.top) * scale);
 
     setHoverCoords({ x: clickX, y: clickY });
-    setActivePanel(resolvePanelName(clickX, clickY, liveryState.vehicle));
+    const panelKey = getPanelAtPoint(clickX, clickY);
+    if (panelKey) {
+      setActivePanel(PANELS[panelKey].label);
+      setActiveCompassDir(PANELS[panelKey].dir);
+    }
 
     activePointers.current.set(e.pointerId, { x: clickX, y: clickY });
 
-    // Handle 2-Finger Pinch Start
     if (activePointers.current.size === 2 && selectedDecal) {
       const pts = Array.from(activePointers.current.values());
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       const angle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
-      pinchStart.current = {
-        dist,
-        angle,
-        scaleX: selectedDecal.scaleX,
-        scaleY: selectedDecal.scaleY,
-        rotation: selectedDecal.rotation
-      };
+      pinchStart.current = { dist, angle, scaleX: selectedDecal.scaleX, scaleY: selectedDecal.scaleY, rotation: selectedDecal.rotation };
       setDragMode('scale');
       return;
     }
 
     if (selectedDecal) {
-      const handleW = 140 * selectedDecal.scaleX;
       const handleH = 100 * selectedDecal.scaleY;
-
-      // Check top rotation knob click
       const rotKnobX = selectedDecal.x;
       const rotKnobY = selectedDecal.y - (handleH / 2 + 30);
-      const distRot = Math.hypot(clickX - rotKnobX, clickY - rotKnobY);
-
-      if (distRot < 35) {
+      if (Math.hypot(clickX - rotKnobX, clickY - rotKnobY) < 35) {
         setIsDragging(true);
         setDragMode('rotate');
         setDragStart({ x: clickX, y: clickY });
-        setDecalStartPos({
-          x: selectedDecal.x,
-          y: selectedDecal.y,
-          scaleX: selectedDecal.scaleX,
-          scaleY: selectedDecal.scaleY,
-          rotation: selectedDecal.rotation
-        });
+        setDecalStartPos({ x: selectedDecal.x, y: selectedDecal.y, scaleX: selectedDecal.scaleX, scaleY: selectedDecal.scaleY, rotation: selectedDecal.rotation });
         return;
       }
     }
 
-    // Check hit test against decals (topmost zIndex first)
     const sorted = [...liveryState.decals].sort((a, b) => b.zIndex - a.zIndex);
-    const hit = sorted.find(d => {
-      const dist = Math.hypot(clickX - d.x, clickY - d.y);
-      return dist < 90 * Math.max(d.scaleX, d.scaleY);
-    });
-
+    const hit = sorted.find(d => Math.hypot(clickX - d.x, clickY - d.y) < 90 * Math.max(d.scaleX, d.scaleY));
     if (hit) {
       onSelectDecal(hit.id);
       setIsDragging(true);
       setDragMode('move');
       setDragStart({ x: clickX, y: clickY });
-      setDecalStartPos({
-        x: hit.x,
-        y: hit.y,
-        scaleX: hit.scaleX,
-        scaleY: hit.scaleY,
-        rotation: hit.rotation
-      });
+      setDecalStartPos({ x: hit.x, y: hit.y, scaleX: hit.scaleX, scaleY: hit.scaleY, rotation: hit.rotation });
     } else {
       onSelectDecal(null);
     }
@@ -430,28 +645,28 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const rect = canvas.getBoundingClientRect();
     const scale = 1024 / rect.width;
     const currX = Math.round((e.clientX - rect.left) * scale);
     const currY = Math.round((e.clientY - rect.top) * scale);
 
     setHoverCoords({ x: currX, y: currY });
-    setActivePanel(resolvePanelName(currX, currY, liveryState.vehicle));
+    const panelKey = getPanelAtPoint(currX, currY);
+    if (panelKey) {
+      setActivePanel(PANELS[panelKey].label);
+      setActiveCompassDir(PANELS[panelKey].dir);
+    }
 
     if (activePointers.current.has(e.pointerId)) {
       activePointers.current.set(e.pointerId, { x: currX, y: currY });
     }
 
-    // Two-finger Pinch & Rotate
     if (activePointers.current.size === 2 && selectedDecalId && selectedDecal) {
       const pts = Array.from(activePointers.current.values());
       const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       const currentAngle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
-
       const scaleFactor = Math.max(0.2, Math.min(3.0, currentDist / pinchStart.current.dist));
       const angleDiff = ((currentAngle - pinchStart.current.angle) * 180) / Math.PI;
-
       onUpdateDecal(selectedDecalId, {
         scaleX: Number((pinchStart.current.scaleX * scaleFactor).toFixed(2)),
         scaleY: Number((pinchStart.current.scaleY * scaleFactor).toFixed(2)),
@@ -461,7 +676,6 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     }
 
     if (!isDragging || !selectedDecalId || !selectedDecal) return;
-
     const dx = currX - dragStart.x;
     const dy = currY - dragStart.y;
 
@@ -480,47 +694,41 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     activePointers.current.delete(e.pointerId);
-    if (activePointers.current.size === 0) {
-      setIsDragging(false);
-    }
+    if (activePointers.current.size === 0) setIsDragging(false);
     const canvas = canvasRef.current;
-    if (canvas) {
-      try {
-        canvas.releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-    }
+    if (canvas) { try { canvas.releasePointerCapture(e.pointerId); } catch { /* ignore */ } }
   };
+
+  // Active panel color for HUD
+  const activePanelColor = Object.values(PANELS).find(p => p.label === activePanel)?.color || '#00f0ff';
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full flex flex-col items-center justify-center bg-[#0d0d18] p-2 sm:p-3 rounded-xl border border-vice-border shadow-2xl overflow-hidden"
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-[100] bg-[#070710]/95 backdrop-blur-md flex flex-col items-center justify-center p-2 sm:p-4 animate-fadeIn"
+          : "relative w-full h-full flex flex-col items-center justify-center bg-[#07071299] p-2 sm:p-3 rounded-xl border border-vice-border shadow-2xl overflow-hidden"
+      }
     >
-      {/* FLOATING HUD CONTROLS OVER CANVAS */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-black/85 backdrop-blur-md p-1.5 rounded-xl border border-vice-border shadow-lg">
+      {/* FLOATING HUD CONTROLS */}
+      <div className={`absolute ${isFullscreen ? 'top-3 right-3 sm:top-5 sm:right-5' : 'top-3 right-3'} z-20 flex items-center gap-1.5 bg-black/85 backdrop-blur-md p-1.5 rounded-xl border border-vice-border shadow-lg`}>
         {onUndo && (
           <button
             onClick={onUndo}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              canUndo ? 'text-vice-pink hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
-            }`}
+            className={`p-1.5 rounded-lg text-xs transition-all ${canUndo ? 'text-vice-pink hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'}`}
           >
             <Undo2 size={15} />
           </button>
         )}
-
         {onRedo && (
           <button
             onClick={onRedo}
             disabled={!canRedo}
             title="Redo (Ctrl+Y)"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              canRedo ? 'text-vice-cyan hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
-            }`}
+            className={`p-1.5 rounded-lg text-xs transition-all ${canRedo ? 'text-vice-cyan hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'}`}
           >
             <Redo2 size={15} />
           </button>
@@ -529,21 +737,19 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
         <div className="w-[1px] h-4 bg-gray-700 mx-0.5" />
 
         <button
-          onClick={() => setCanvasZoom(prev => Math.min(2.0, prev + 0.15))}
+          onClick={() => setCanvasZoom(prev => Math.min(2.5, prev + 0.15))}
           title="Zoom In"
           className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
         >
           <ZoomIn size={15} />
         </button>
-
         <button
-          onClick={() => setCanvasZoom(prev => Math.max(0.7, prev - 0.15))}
+          onClick={() => setCanvasZoom(prev => Math.max(0.5, prev - 0.15))}
           title="Zoom Out"
           className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
         >
           <ZoomOut size={15} />
         </button>
-
         <button
           onClick={() => setCanvasZoom(1)}
           title="Reset Zoom"
@@ -559,12 +765,28 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
             setLocalShowGuides(!localShowGuides);
             if (onToggleGuides) onToggleGuides();
           }}
-          title={localShowGuides ? 'Hide UV Guides' : 'Show UV Guides'}
+          title={localShowGuides ? 'Hide Blueprint Guides' : 'Show Blueprint Guides'}
           className={`p-1.5 rounded-lg transition-all ${
             localShowGuides ? 'text-vice-cyan bg-vice-cyan/20 border border-vice-cyan/40' : 'text-gray-500 hover:text-gray-300'
           }`}
         >
           {localShowGuides ? <Eye size={15} /> : <EyeOff size={15} />}
+        </button>
+
+        <div className="w-[1px] h-4 bg-gray-700 mx-0.5" />
+
+        {/* FULLSCREEN MODE TOGGLE (LIKE UNLAYER) */}
+        <button
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          title={isFullscreen ? "Exit Fullscreen (ESC)" : "Fullscreen 2D Canvas (F)"}
+          className={`p-1.5 rounded-lg transition-all flex items-center gap-1 ${
+            isFullscreen
+              ? 'text-[#39ff14] bg-[#39ff14]/20 border border-[#39ff14]/50 shadow-neon-green'
+              : 'text-gray-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+          {isFullscreen && <span className="text-[10px] font-vice font-bold pr-1 hidden sm:inline">EXIT FULLSCREEN</span>}
         </button>
 
         {onOpenExportModal && (
@@ -582,17 +804,17 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
         )}
       </div>
 
-      {/* TOP LEFT: ACTIVE VEHICLE & UV BADGE */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-vice-cyan/40 shadow-lg text-xs font-vice text-vice-cyan">
-        <span className="w-2 h-2 rounded-full bg-vice-cyan animate-ping" />
-        <span className="font-bold">{liveryState.vehicle.toUpperCase()} UV MAP</span>
-        <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">(1024×1024)</span>
+      {/* TOP LEFT: VEHICLE BADGE */}
+      <div className={`absolute ${isFullscreen ? 'top-3 left-3 sm:top-5 sm:left-5' : 'top-3 left-3'} z-20 flex items-center gap-2 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-vice-cyan/40 shadow-lg text-xs font-vice text-vice-cyan`}>
+        <Compass size={13} className="animate-spin" style={{ animationDuration: '8s' }} />
+        <span className="font-bold">{liveryState.vehicle.toUpperCase()} BLUEPRINT</span>
+        <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">{isFullscreen ? 'FULLSCREEN 2D' : '5-VIEW'}</span>
       </div>
 
-      {/* CANVAS CONTAINER WITH SMOOTH TRANSFORM */}
+      {/* CANVAS CONTAINER */}
       <div
         style={{ transform: `scale(${canvasZoom})`, transition: 'transform 0.15s ease-out' }}
-        className="relative w-full max-w-[560px] aspect-square rounded-lg overflow-hidden border-2 border-vice-pink/40 shadow-neon-pink group"
+        className={`relative w-full ${isFullscreen ? 'max-w-[min(82vh,850px)] max-h-[82vh]' : 'max-w-[560px]'} aspect-square rounded-lg overflow-hidden border-2 border-vice-cyan/30 shadow-[0_0_30px_#00f0ff22] group my-auto`}
       >
         <canvas
           ref={canvasRef}
@@ -602,24 +824,30 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="w-full h-full cursor-crosshair touch-none bg-black"
+          className="w-full h-full cursor-crosshair touch-none"
         />
 
-        {/* Dynamic Holographic Scanline Overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.25)_51%)] bg-[length:100%_4px]" />
+        {/* Holographic scanline overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.18)_51%)] bg-[length:100%_3px]" />
       </div>
 
-      {/* MODERN VX HUD / ACTIVE PANEL & PIXEL TELEMETRY BAR */}
-      <div className="mt-2.5 w-full max-w-[560px] flex items-center justify-between px-2 py-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-gray-800 text-[11px] font-mono text-gray-300">
-        <div className="flex items-center gap-1.5 font-vice text-vice-pink font-bold">
-          <MapPin size={13} className="text-vice-pink animate-pulse" />
+      {/* BOTTOM TELEMETRY BAR */}
+      <div className={`mt-2.5 w-full ${isFullscreen ? 'max-w-[min(82vh,850px)]' : 'max-w-[560px]'} flex items-center justify-between px-2 py-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-gray-800 text-[11px] font-mono text-gray-300`}>
+        <div className="flex items-center gap-1.5 font-vice font-bold" style={{ color: activePanelColor }}>
+          <MapPin size={13} className="animate-pulse" style={{ color: activePanelColor }} />
           <span>{activePanel}</span>
+          <span
+            className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-mono border"
+            style={{ color: activePanelColor, borderColor: activePanelColor + '55', background: activePanelColor + '18' }}
+          >
+            {activeCompassDir}
+          </span>
         </div>
 
         {hoverCoords && (
-          <div className="flex items-center gap-3 text-[10px] text-gray-400">
+          <div className="flex items-center gap-2 text-[10px] text-gray-400">
             <span className="text-vice-cyan font-bold">
-              X: {hoverCoords.x}px • Y: {hoverCoords.y}px
+              X:{hoverCoords.x} Y:{hoverCoords.y}
             </span>
             <span className="hidden sm:inline text-gray-500">
               UV: [{(hoverCoords.x / 1024).toFixed(2)}, {(hoverCoords.y / 1024).toFixed(2)}]
@@ -634,7 +862,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
             title="Open Ready to Print & Export Studio"
           >
             <Printer size={12} />
-            <span>READY TO PRINT 🖨️</span>
+            <span>READY TO PRINT</span>
           </button>
         ) : (
           <div className="text-[10px] font-vice text-vice-yellow font-bold hidden sm:block">
@@ -646,15 +874,13 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
   );
 };
 
-// --- HELPER FUNCTION TO RENDER LICENSE PLATES ---
+// ─── License Plate Helper ──────────────────────────────────────────────────
 function drawLicensePlate(ctx: CanvasRenderingContext2D, decal: DecalLayer) {
   const plateW = 240;
   const plateH = 120;
-
   ctx.save();
   ctx.translate(-plateW / 2, -plateH / 2);
 
-  // Plate background box
   if (decal.plateStyle === 'vice_pink') {
     const grad = ctx.createLinearGradient(0, 0, 0, plateH);
     grad.addColorStop(0, '#ff007f');
@@ -669,23 +895,19 @@ function drawLicensePlate(ctx: CanvasRenderingContext2D, decal: DecalLayer) {
     ctx.fillStyle = '#00f0ff';
   }
 
-  // Rounded rectangle plate
   ctx.beginPath();
   ctx.roundRect(0, 0, plateW, plateH, 12);
   ctx.fill();
 
-  // Outer border
   ctx.strokeStyle = decal.plateStyle === 'black_gold' ? '#ffea00' : '#ffffff';
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Header Title Text ("VICE CITY")
   ctx.fillStyle = decal.plateStyle === 'yellow_blue' ? '#ffea00' : '#ffffff';
   ctx.font = 'bold 16px Orbitron';
   ctx.textAlign = 'center';
   ctx.fillText('VICE CITY', plateW / 2, 24);
 
-  // Main Registration Number ("VC 1986")
   ctx.font = 'bold 36px Impact, sans-serif';
   ctx.fillStyle = decal.plateStyle === 'yellow_blue' ? '#ffea00' : decal.plateStyle === 'black_gold' ? '#ffea00' : '#111111';
   if (decal.plateStyle === 'vice_pink') ctx.fillStyle = '#ffffff';

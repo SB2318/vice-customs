@@ -19,9 +19,10 @@ const SHORTCUTS: ShortcutItem[] = [
   { keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo change (Mac/Cross)', category: 'Editing' },
   { keys: ['Delete', 'Backspace'], description: 'Remove active decal', category: 'Editing' },
   { keys: ['1', '2', '3', '4', '5', '6'], description: 'Switch camera angles (3/4, Front, Side, Rear, Top, Rims)', category: '3D Studio' },
+  { keys: ['G'], description: 'Launch 3D GTA Police Chase Escape Game', category: '3D Heist' },
+  { keys: ['F'], description: 'Toggle Fullscreen 2D Blueprint Canvas', category: '2D Canvas' },
   { keys: ['R'], description: 'Rev engine & exhaust flame burst', category: 'Studio FX' },
   { keys: ['U'], description: 'Toggle neon underglow lights', category: 'Studio FX' },
-  { keys: ['G'], description: 'Toggle 2D UV wireframe panel guides', category: '2D Canvas' },
   { keys: ['?'], description: 'Show Keyboard Shortcuts & Guide', category: 'General' },
 ];
 

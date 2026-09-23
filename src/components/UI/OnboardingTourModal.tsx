@@ -20,44 +20,44 @@ interface TourStep {
 
 const STEPS: TourStep[] = [
   {
-    eyebrow:  'STEP 01 — GARAGE',
-    headline: 'YOUR CITY.\nYOUR RIDE.',
-    body:     'Pick any chassis — Infernus, Cheetah, Banshee, Comet, Dominator, or Dirtbike — and take it from stock to showstopper.',
-    tip:      'Switch vehicles from the top header bar.',
+    eyebrow:  'ACT I — THE BOOST',
+    headline: 'JACKED AT\n2:00 AM.',
+    body:     'You just boosted a high-priority supercar outside the Starfish Island club. The owner spotted you and called the Vice City Police Department.',
+    tip:      'Switch your stolen chassis from the top header bar.',
     accent:   '#ff007f',
-    glyph:    '🏎',
+    glyph:    '🚨',
   },
   {
-    eyebrow:  'STEP 02 — 2D CANVAS',
-    headline: 'PAINT\nBY PIXEL.',
-    body:     'Drag decals onto a live 1024 × 1024 UV blueprint. Two-finger pinch to scale and rotate. Every stroke wraps to the 3D model in real time.',
-    tip:      'Hit G to toggle UV wireframe panel guides.',
+    eyebrow:  'ACT II — THE CHOP SHOP',
+    headline: 'DISGUISE\nTHE RIDE.',
+    body:     'Head into the underground studio. Drag vinyls, decals, and body stripes onto the 2D UV blueprint in real time so the police APB description is useless.',
+    tip:      'Press F to toggle Fullscreen 2D Canvas mode.',
     accent:   '#00f0ff',
     glyph:    '🎨',
   },
   {
-    eyebrow:  'STEP 03 — 3D STUDIO',
-    headline: '60 FPS\nNEON HDRI.',
-    body:     'Eight cinematic camera presets — orbit, spin, close-up on the rims. Press keys 1–8 to jump between them instantly.',
-    tip:      'Drag the center splitter to resize the 2D/3D panels.',
+    eyebrow:  'ACT III — 3D INSPECTION',
+    headline: 'VERIFY\nTHE HEAT.',
+    body:     'Inspect every angle in 3D 60 FPS neon HDRI. Toggle pearl clearcoats, dark limo window tints, and neon underglow to stay invisible in the night.',
+    tip:      'Press keys 1–8 for cinematic camera angles; U for underglow.',
     accent:   '#ffe600',
-    glyph:    '💡',
+    glyph:    '🏎️',
   },
   {
-    eyebrow:  'STEP 04 — ATMOSPHERE',
-    headline: 'WET STREETS,\nDRIP PAINT.',
-    body:     'Toggle Rain Mode for ultra-gloss clearcoat reflections and particle splashes. Hit REV for engine roar and exhaust backfire flames.',
-    tip:      'Press U to toggle neon underglow from anywhere.',
-    accent:   '#00f0ff',
-    glyph:    '🌧',
+    eyebrow:  'ACT IV — POLICE CHASE',
+    headline: 'OUTRUN\nTHE COPS.',
+    body:     'Hit the coastal highway with sirens wailing behind you. Dodge interceptors, collect Nitro bottles, trigger EMPs, and survive the 5-Star Wanted Level.',
+    tip:      'Press G anytime to launch the 3D Police Chase Escape Game.',
+    accent:   '#ff3300',
+    glyph:    '🚔',
   },
   {
-    eyebrow:  'STEP 05 — EXPORT',
-    headline: 'BUILT.\nNOW FLEX.',
-    body:     'Export high-res 2D textures, 3D screenshots, or back up your full livery as a JSON file. Local garage slots keep 5 builds saved.',
-    tip:      'Press ? anytime to see all keyboard shortcuts.',
-    accent:   '#ff007f',
-    glyph:    '💾',
+    eyebrow:  'ACT V — BOUNTY SCORECARD',
+    headline: 'MOST WANTED\nPOSTER.',
+    body:     'Survive the chase to bank your escape score and generate an official Vice City PD Most Wanted Certificate PNG with your custom ride render.',
+    tip:      'Save and export your liveries as JSON or HD textures anytime.',
+    accent:   '#00ff99',
+    glyph:    '🏆',
   },
 ];
 
@@ -230,10 +230,10 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
 
               <button
                 onClick={() => {
-                  onClose();
-                  if (isLast && onOpenExportModal) {
-                    onOpenExportModal();
-                  } else if (!isLast) {
+                  if (isLast) {
+                    onClose();
+                    onOpenExportModal?.();
+                  } else {
                     go(idx + 1);
                   }
                 }}
@@ -244,7 +244,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                   transition: 'background 0.3s, box-shadow 0.3s',
                 }}
               >
-                {isLast ? 'OPEN EXPORT & PRINT 💾' : 'NEXT'}
+                {isLast ? 'OPEN EXPORT & PRINT' : 'NEXT'}
                 {!isLast && <ChevronRight size={13} />}
               </button>
             </div>

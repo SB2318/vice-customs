@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LiveryState, VehicleModel, ViewMode } from '../../types';
 import { audioEngine } from '../../utils/audioEngine';
-import { Flame, Sparkles, Download, Menu, X, Undo2, Redo2, Volume2, VolumeX } from 'lucide-react';
+import { Flame, Sparkles, Download, Menu, X, Undo2, Redo2, Volume2, VolumeX, Gamepad2 } from 'lucide-react';
 import { useDragScroll } from '../../utils/useDragScroll';
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   onSelectViewMode: (mode: ViewMode) => void;
   onOpenPresetsModal: () => void;
   onOpenExportModal: () => void;
+  onOpenGameModal?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -24,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectViewMode,
   onOpenPresetsModal,
   onOpenExportModal,
+  onOpenGameModal,
   onUndo,
   onRedo,
   canUndo,
@@ -195,6 +197,19 @@ export const Header: React.FC<HeaderProps> = ({
             REV!
           </button>
 
+          {/* 🚔 REAL 3D GTA HEIST POLICE CHASE ESCAPE */}
+          {onOpenGameModal && (
+            <button
+              onClick={onOpenGameModal}
+              className="px-3 py-1.5 bg-gradient-to-r from-red-600/40 via-purple-600/40 to-blue-600/40 hover:from-red-600 hover:to-blue-600 text-white font-vice text-[11px] font-black rounded-xl border border-red-500/60 shadow-neon-pink/40 hover:shadow-neon-pink transition-all flex items-center gap-1.5 whitespace-nowrap hover:scale-105 active:scale-95 shrink-0"
+              title="Launch 3D GTA Police Chase Escape Game (G)"
+            >
+              <span className="text-sm animate-pulse">🚔</span>
+              <span>HEIST ESCAPE</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping ml-0.5" />
+            </button>
+          )}
+
           {/* Presets */}
           <button
             onClick={onOpenPresetsModal}
@@ -284,6 +299,14 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action buttons */}
           <div className="grid grid-cols-2 gap-2 pt-1">
+            {onOpenGameModal && (
+              <button
+                onClick={() => { onOpenGameModal(); setMenuOpen(false); }}
+                className="py-2 bg-gradient-to-r from-red-600/30 to-blue-600/30 border border-red-500/50 text-white font-vice text-xs font-black rounded-xl flex items-center justify-center gap-1.5 shadow-neon-pink/40"
+              >
+                <span>🚔</span> HEIST ESCAPE
+              </button>
+            )}
             <button
               onClick={handleRevEngine}
               className="py-2 bg-gradient-to-r from-vice-orange to-red-600 text-white font-vice text-xs font-black rounded-xl flex items-center justify-center gap-1.5 border border-yellow-400/40"

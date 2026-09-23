@@ -40,11 +40,12 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
   canvasDataUrl,
   onSaveUnlayerImage,
 }) => {
-  const [activeTab, setActiveTab] = useState<'paint' | 'decals' | 'text' | 'tuning' | 'layers' | 'image'>('paint');
+  const [activeTab, setActiveTab] = useState<'paint' | 'decals' | 'text' | 'tuning' | 'layers' | 'image'>('image');
   const [isUnlayerFullscreen, setIsUnlayerFullscreen] = useState(false);
   const [decalCategory, setDecalCategory] = useState<DecalCategory>('stripe');
   
   const tabDrag = useDragScroll();
+  const categoryDrag = useDragScroll();
 
   // Custom Text & Plate inputs
   // ...
@@ -149,7 +150,8 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         onMouseLeave={tabDrag.onMouseLeave}
         onMouseUp={tabDrag.onMouseUp}
         onMouseMove={tabDrag.onMouseMove}
-        className="flex bg-[#0b0b14] border-b border-vice-border overflow-x-auto custom-scrollbar pb-1 cursor-grab"
+        onWheel={tabDrag.onWheel}
+        className="flex bg-[#0b0b14] border-b border-vice-border overflow-x-auto custom-scrollbar pb-1 cursor-grab select-none"
       >
         <button
           onClick={() => { setActiveTab('paint'); audioEngine.playClickSFX(); }}
@@ -312,7 +314,15 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         {/* --- TAB 2: DECALS STUDIO LIBRARY --- */}
         {activeTab === 'decals' && (
           <div className="space-y-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+            <div 
+              ref={categoryDrag.scrollRef}
+              onMouseDown={categoryDrag.onMouseDown}
+              onMouseLeave={categoryDrag.onMouseLeave}
+              onMouseUp={categoryDrag.onMouseUp}
+              onMouseMove={categoryDrag.onMouseMove}
+              onWheel={categoryDrag.onWheel}
+              className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar cursor-grab select-none"
+            >
               {DECAL_CATEGORIES.filter(c => c.id !== 'plate' && c.id !== 'text').map(cat => (
                 <button
                   key={cat.id}
