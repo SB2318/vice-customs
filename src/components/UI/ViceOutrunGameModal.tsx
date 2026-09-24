@@ -1,10 +1,30 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback, Suspense, Component } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { LiveryState, HeistMission, GetawayVehicleType } from '../../types';
 import { Vehicle3D } from '../Three3D/Vehicle3D';
 import { audioEngine } from '../../utils/audioEngine';
+import { ViceRadio } from './ViceRadio';
 import { X, Star, Zap, Shield, Play, ChevronRight, RotateCcw, AlertTriangle, ShieldAlert } from 'lucide-react';
+
+interface EBState { hasError: boolean; }
+class ThreeCanvasErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
+  constructor(props: any) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err: Error) { console.warn('[3D Pursuit Canvas] Canvas error:', err.message); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-center">
+          <AlertTriangle className="w-10 h-10 text-amber-400 mb-2 animate-bounce" />
+          <h3 className="text-sm font-mono font-bold text-white uppercase">3D GETAWAY PURSUIT ACTIVE</h3>
+          <p className="text-xs font-mono text-slate-400 max-w-sm mt-1">Evade police cruisers and use action controls below to execute your escape!</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface ViceHeistModalProps {
   isOpen: boolean;
@@ -473,6 +493,15 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
     puSpawnTimer.current = 0;
   }, [mission]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setPhase('intro');
+      setIntroSlide(0);
+      setSlideVisible(true);
+      resetGame();
+    }
+  }, [isOpen, resetGame]);
+
   const goSlide = (next: number) => {
     setSlideVisible(false);
     setTimeout(() => { setIntroSlide(next); setSlideVisible(true); }, 180);
@@ -633,12 +662,15 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
             {mission ? `${mission.title.toUpperCase()} (${vehicleType.toUpperCase()})` : 'VICE CITY ESCAPE'}
           </span>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ViceRadio compact showRev />
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* ── PHASE 1: STORY ARC SLIDES ── */}
@@ -722,19 +754,24 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
       {/* ── PHASE 3: PLAYING 3D GETAWAY ── */}
       {phase === 'playing' && (
         <div className="relative flex-1 w-full h-full flex flex-col overflow-hidden">
-          {/* Top HUD Stats Bar */}
-          <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-            <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl backdrop-blur-md">
+          {/* Top HUD Stats Bar & Vehicle-Specific Audio Theme Bar */}
+          <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none gap-2">
+            <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl backdrop-blur-md pointer-events-auto shrink-0">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
               <span className="text-xs font-mono font-bold text-white">HEAT L{wantedLevel}</span>
             </div>
 
-            <div className="bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-xl backdrop-blur-md text-center">
+            {/* Vehicle Specific REVI & MUSIC Player Controller */}
+            <div className="pointer-events-auto hidden md:flex items-center gap-2">
+              <ViceRadio compact showRev onRevClick={() => audioEngine.revEngineForVehicle(vehicleType)} />
+            </div>
+
+            <div className="bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-xl backdrop-blur-md text-center pointer-events-auto shrink-0">
               <span className="text-[10px] font-mono text-slate-400 block">SCORE</span>
               <span className="text-lg font-black font-mono text-pink-400">{score.toLocaleString()}</span>
             </div>
 
-            <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl backdrop-blur-md">
+            <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl backdrop-blur-md pointer-events-auto shrink-0">
               <Zap className={`w-4 h-4 ${nitroActive ? 'text-cyan-400 animate-pulse' : 'text-slate-500'}`} />
               <span className="text-xs font-mono text-slate-300">{Math.floor(escapeDistance)}m</span>
             </div>

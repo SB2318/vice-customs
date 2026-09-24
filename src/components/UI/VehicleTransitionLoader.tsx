@@ -7,12 +7,15 @@ interface VehicleTransitionLoaderProps {
 }
 
 const VEHICLE_META: Record<VehicleModel, { brand: string; model: string; spec: string; color: string }> = {
-  infernus:  { brand: 'PEGASSI',  model: 'INFERNUS',        spec: 'V12 · 6.5L · MID-ENGINE',        color: '#ff007f' },
-  cheetah:   { brand: 'GROTTI',   model: 'CHEETAH CLASSIC', spec: 'V8 · 5.0L · SIDE-STRAKE COUPE',  color: '#00f0ff' },
-  banshee:   { brand: 'BRAVADO',  model: 'BANSHEE GTS',     spec: 'V10 · 6.2L · OPEN ROADSTER',     color: '#ff007f' },
-  comet:     { brand: 'PFISTER',  model: 'COMET GT TURBO',  spec: 'FLAT-6 · 3.6L · WIDEBODY RWD',   color: '#ffe600' },
-  dominator: { brand: 'VAPID',    model: 'DOMINATOR GTX',   spec: 'V8 · SUPERCHARGED · MUSCLE',     color: '#ff007f' },
-  dirtbike:  { brand: 'ÜBERMACHT','model': 'STREET DEMON',   spec: '450CC · SINGLE · SUPERMOTO',     color: '#00f0ff' },
+  infernus:   { brand: 'PEGASSI',   model: 'INFERNUS',        spec: 'V12 · 6.5L · MID-ENGINE',        color: '#ff007f' },
+  cheetah:    { brand: 'GROTTI',    model: 'CHEETAH CLASSIC', spec: 'V8 · 5.0L · SIDE-STRAKE COUPE',  color: '#00f0ff' },
+  banshee:    { brand: 'BRAVADO',   model: 'BANSHEE GTS',     spec: 'V10 · 6.2L · OPEN ROADSTER',     color: '#ff007f' },
+  comet:      { brand: 'PFISTER',   model: 'COMET GT TURBO',  spec: 'FLAT-6 · 3.6L · WIDEBODY RWD',   color: '#ffe600' },
+  dominator:  { brand: 'VAPID',     model: 'DOMINATOR GTX',   spec: 'V8 · SUPERCHARGED · MUSCLE',     color: '#ff007f' },
+  dirtbike:   { brand: 'ÜBERMACHT', model: 'STREET DEMON',   spec: '450CC · SINGLE · SUPERMOTO',     color: '#00f0ff' },
+  train:      { brand: 'TRANSIT',   model: 'BULLET TRAIN',   spec: 'ELECTRIC · 250 MPH · EXPRESS LOCOMOTIVE', color: '#00f0ff' },
+  boat:       { brand: 'PEGASSI',   model: 'POWERBOAT',      spec: 'TWIN V8 · OFFSHORE · MARINE VESSEL',       color: '#10b981' },
+  helicopter: { brand: 'BUZZARD',   model: 'STEALTH HELO',   spec: 'TURBINE · TACTICAL · NIGHTHAWK',          color: '#a855f7' },
 };
 
 export const VehicleTransitionLoader: React.FC<VehicleTransitionLoaderProps> = ({ isLoading, vehicle }) => {

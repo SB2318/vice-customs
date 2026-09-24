@@ -184,6 +184,66 @@ class ViceAudioEngine {
     }
   }
 
+  public revEngineForVehicle(vehicleType: string = 'car', durationMs: number = 2200, onComplete?: () => void) {
+    this.initCtx();
+    if (vehicleType === 'train') {
+      this.playTrainAirHorn();
+    } else if (vehicleType === 'helicopter') {
+      this.playHelicopterRotorBladeSwish();
+    }
+    this.revEngine(durationMs, onComplete);
+  }
+
+  public playTrainAirHorn() {
+    if (this.isMuted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc1.type = 'sawtooth';
+    osc2.type = 'sawtooth';
+
+    // Train horn dual chord (D4 + F#4)
+    osc1.frequency.setValueAtTime(293.66, now);
+    osc2.frequency.setValueAtTime(369.99, now);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 1.2);
+  }
+
+  public playHelicopterRotorBladeSwish() {
+    if (this.isMuted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(2800, now + 0.8);
+
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.85);
+  }
+
   public stopEngine() {
     if (this.revTimeout) {
       clearTimeout(this.revTimeout);

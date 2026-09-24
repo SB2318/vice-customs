@@ -473,12 +473,10 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
               {...finishParams}
             />
           </mesh>
-
           <mesh position={[0, 0.1, 0]}>
             <boxGeometry args={[0.5, 0.4, 0.8]} />
             <meshPhysicalMaterial color="#222222" metalness={0.9} roughness={0.2} clearcoat={0.5} />
           </mesh>
-
           <mesh position={[0, 0.65, 0.95]}>
             <boxGeometry args={[0.5, 0.4, 0.05]} />
             <meshPhysicalMaterial
@@ -487,14 +485,159 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
               {...finishParams}
             />
           </mesh>
+          {/* Handlebars */}
+          <mesh position={[0, 0.8, 0.6]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.9, 12]} />
+            <meshStandardMaterial color="#facc15" metalness={0.8} />
+          </mesh>
         </group>
       )}
 
-      {/* --- WHEELS ASSEMBLY WITH METALLIC RIMS & BRAKE CALIPERS --- */}
-      <Wheel position={[-0.95, 0.35, 1.4]} rimColor={rimColor} />
-      <Wheel position={[0.95, 0.35, 1.4]} rimColor={rimColor} />
-      <Wheel position={[-0.95, 0.35, -1.4]} rimColor={rimColor} />
-      <Wheel position={[0.95, 0.35, -1.4]} rimColor={rimColor} />
+      {/* ════════════════ 7. BULLET TRAIN LOCOMOTIVE ════════════════ */}
+      {liveryState.vehicle === 'train' && (
+        <group position={[0, 0.9, 0]}>
+          {/* Main Locomotive Body */}
+          <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
+            <boxGeometry args={[2.1, 1.4, 5.8]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          {/* Aerodynamic Nose Cone */}
+          <mesh position={[0, 0.2, 3.1]} rotation={[0.4, 0, 0]}>
+            <boxGeometry args={[2.0, 1.0, 1.2]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          {/* Cab Windshield */}
+          <mesh position={[0, 0.7, 2.5]} rotation={[-0.3, 0, 0]}>
+            <boxGeometry args={[1.9, 0.5, 0.8]} />
+            <meshPhysicalMaterial color="#00f0ff" transmission={0.8} transparent opacity={0.8} roughness={0.1} />
+          </mesh>
+          {/* Roof Pantograph */}
+          <group position={[0, 1.2, -1.0]}>
+            <mesh position={[0, 0.2, 0]}>
+              <boxGeometry args={[1.2, 0.05, 0.8]} />
+              <meshStandardMaterial color="#94a3b8" metalness={0.9} />
+            </mesh>
+          </group>
+        </group>
+      )}
+
+      {/* ════════════════ 8. MIDNIGHT POWERBOAT ════════════════ */}
+      {liveryState.vehicle === 'boat' && (
+        <group position={[0, 0.5, 0]}>
+          {/* V-Hull Main Body */}
+          <mesh castShadow receiveShadow position={[0, 0.3, 0]}>
+            <boxGeometry args={[1.9, 0.6, 4.6]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          {/* Sharp Bow Nose */}
+          <mesh position={[0, 0.3, 2.6]} rotation={[-0.2, 0, 0]}>
+            <boxGeometry args={[1.6, 0.5, 1.2]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          {/* Windshield */}
+          <mesh position={[0, 0.75, 0.5]} rotation={[-0.4, 0, 0]}>
+            <boxGeometry args={[1.7, 0.45, 0.6]} />
+            <meshPhysicalMaterial color="#38bdf8" transmission={0.85} transparent opacity={0.7} roughness={0.1} />
+          </mesh>
+          {/* Twin Outboard Motors */}
+          <group position={[0, 0.2, -2.4]}>
+            <mesh position={[-0.5, 0, 0]}>
+              <boxGeometry args={[0.35, 0.6, 0.5]} />
+              <meshStandardMaterial color="#0f172a" metalness={0.9} />
+            </mesh>
+            <mesh position={[0.5, 0, 0]}>
+              <boxGeometry args={[0.35, 0.6, 0.5]} />
+              <meshStandardMaterial color="#0f172a" metalness={0.9} />
+            </mesh>
+          </group>
+        </group>
+      )}
+
+      {/* ════════════════ 9. STEALTH HELICOPTER ════════════════ */}
+      {liveryState.vehicle === 'helicopter' && (
+        <group position={[0, 1.0, 0]}>
+          {/* Cockpit Canopy Fuselage */}
+          <mesh castShadow receiveShadow position={[0, 0.2, 0]}>
+            <sphereGeometry args={[1.1, 24, 24]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          {/* Tail Boom */}
+          <mesh position={[0, 0.3, -2.2]}>
+            <boxGeometry args={[0.35, 0.35, 2.8]} />
+            <meshPhysicalMaterial
+              map={bodyTexture || undefined}
+              color={!bodyTexture ? liveryState.primaryColor : '#ffffff'}
+              {...finishParams}
+            />
+          </mesh>
+          {/* Main Rotor Mast & Rotor Assembly */}
+          <group position={[0, 1.3, 0]}>
+            <mesh rotation={[0, 0, 0]}>
+              <boxGeometry args={[5.2, 0.05, 0.25]} />
+              <meshStandardMaterial color="#334155" metalness={0.9} />
+            </mesh>
+          </group>
+          {/* Tail Rotor */}
+          <group position={[0.25, 0.5, -3.5]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh>
+              <boxGeometry args={[0.9, 0.04, 0.1]} />
+              <meshStandardMaterial color="#a855f7" />
+            </mesh>
+          </group>
+          {/* Landing Skids */}
+          <group position={[0, -0.9, 0]}>
+            <mesh position={[-0.8, 0, 0]}>
+              <boxGeometry args={[0.1, 0.1, 3.2]} />
+              <meshStandardMaterial color="#0f172a" metalness={0.9} />
+            </mesh>
+            <mesh position={[0.8, 0, 0]}>
+              <boxGeometry args={[0.1, 0.1, 3.2]} />
+              <meshStandardMaterial color="#0f172a" metalness={0.9} />
+            </mesh>
+          </group>
+        </group>
+      )}
+
+      {/* --- WHEELS ASSEMBLY (Only for wheeled vehicles) --- */}
+      {liveryState.vehicle !== 'boat' && liveryState.vehicle !== 'helicopter' && (
+        <>
+          {liveryState.vehicle === 'dirtbike' ? (
+            <>
+              {/* Inline Bike Wheels */}
+              <Wheel position={[0, 0.35, 1.0]} rimColor={rimColor} />
+              <Wheel position={[0, 0.35, -1.0]} rimColor={rimColor} />
+            </>
+          ) : (
+            <>
+              {/* 4 Corner Car / Train Wheels */}
+              <Wheel position={[-0.95, 0.35, 1.4]} rimColor={rimColor} />
+              <Wheel position={[0.95, 0.35, 1.4]} rimColor={rimColor} />
+              <Wheel position={[-0.95, 0.35, -1.4]} rimColor={rimColor} />
+              <Wheel position={[0.95, 0.35, -1.4]} rimColor={rimColor} />
+            </>
+          )}
+        </>
+      )}
     </group>
   );
 };

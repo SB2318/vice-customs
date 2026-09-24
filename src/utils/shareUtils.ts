@@ -79,3 +79,42 @@ export function readLiveryJsonFile(file: File): Promise<LiveryState> {
     reader.readAsText(file);
   });
 }
+
+/**
+ * Download Forgery Data as a .json file
+ */
+export function downloadForgeryJson(data: { missionId: string; vehicleType: string; editedDataUrl: string; notes?: string[] }) {
+  const name = `ViceHeist_Forgery_${data.vehicleType}_${data.missionId}.json`;
+  const json = JSON.stringify({ ...data, timestamp: new Date().toISOString() }, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Read Forgery Data from an uploaded .json File
+ */
+export function readForgeryJsonFile(file: File): Promise<{ editedDataUrl: string; vehicleType?: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const data = JSON.parse(text);
+        if (data && data.editedDataUrl) {
+          resolve(data);
+        } else {
+          reject(new Error('Invalid Forgery JSON file structure. Missing editedDataUrl field.'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+}

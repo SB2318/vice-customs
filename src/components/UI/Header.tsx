@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
     setMenuOpen(false);
   };
 
-  const vehicles: VehicleModel[] = ['infernus', 'banshee', 'dominator', 'dirtbike'];
+  const vehicles: VehicleModel[] = ['infernus', 'cheetah', 'banshee', 'comet', 'dominator', 'dirtbike', 'train', 'boat', 'helicopter'];
 
   return (
     <header className="w-full bg-[#090912]/98 backdrop-blur-xl border-b border-vice-border z-40 sticky top-0">

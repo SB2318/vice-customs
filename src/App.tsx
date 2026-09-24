@@ -201,6 +201,7 @@ export const App: React.FC = () => {
   const handleSubmitForgery = (result: ForgeryValidationResult) => {
     setForgeryResult(result);
     setIsEvidenceEditorOpen(false);
+    setIsGameOpen(false);
     setIsConsequenceOpen(true);
   };
 
@@ -462,8 +463,17 @@ export const App: React.FC = () => {
         <EvidenceEditorModal
           isOpen={isEvidenceEditorOpen}
           mission={activeHeistMission}
-          onClose={() => setIsEvidenceEditorOpen(false)}
+          onClose={() => {
+            setIsEvidenceEditorOpen(false);
+            setActiveHeistMission(null);
+          }}
           onSubmitForgery={handleSubmitForgery}
+          liveryState={liveryState}
+          onUpdateLiveryState={handleUpdateLiveryState}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
       )}
 

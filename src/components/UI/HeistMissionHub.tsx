@@ -3,6 +3,7 @@ import { HEIST_MISSIONS } from '../../utils/heistMissions';
 import { HeistMission, GetawayVehicleType } from '../../types';
 import { Car, Bike, Train, Ship, Navigation, ShieldAlert, Award, Play, Trophy, Sparkles, AlertCircle, Layers } from 'lucide-react';
 import { audioEngine } from '../../utils/audioEngine';
+import { ViceRadio } from './ViceRadio';
 
 interface HeistMissionHubProps {
   onSelectMission: (mission: HeistMission) => void;

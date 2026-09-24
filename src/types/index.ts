@@ -1,4 +1,4 @@
-export type VehicleModel = 'infernus' | 'cheetah' | 'banshee' | 'comet' | 'dominator' | 'dirtbike';
+export type VehicleModel = 'infernus' | 'cheetah' | 'banshee' | 'comet' | 'dominator' | 'dirtbike' | 'train' | 'boat' | 'helicopter';
 
 export type PaintFinish = 'gloss' | 'matte' | 'metallic' | 'pearlescent' | 'chameleon' | 'carbon' | 'rust';
 
