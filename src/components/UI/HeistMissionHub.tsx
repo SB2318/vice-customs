@@ -42,10 +42,10 @@ export const HeistMissionHub: React.FC<HeistMissionHubProps> = ({ onSelectMissio
             <ShieldAlert className="w-3.5 h-3.5" /> NEON ESCAPE — 5 INTERCONNECTED CHAPTERS
           </div>
           <h1 className="text-2xl sm:text-4xl font-black font-sans tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 uppercase">
-            5 VEHICLES = 5 BESPOKE EDITING MECHANICS
+            VEHICLE HEIST STUDIO — DOCTOR THE EVIDENCE & ESCAPE
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            Every vehicle has a completely different image-editing mechanic. Alter visual evidence in Unlayer to change the story and escape the city's tracking database.
+            Choose your getaway vehicle path. Use the Unlayer image editor to doctor surveillance evidence, alter identity markings, fool the police database, and execute live 3D pursuit evasion.
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export const HeistMissionHub: React.FC<HeistMissionHubProps> = ({ onSelectMissio
       {/* Vehicle Selection Cards Grid */}
       <div className="relative z-10 w-full max-w-6xl mb-6">
         <h2 className="text-xs font-mono font-bold text-slate-400 tracking-wider uppercase mb-3 flex items-center gap-2">
-          SELECT YOUR GETAWAY VEHICLE & EDITING MECHANIC
+          SELECT YOUR GETAWAY VEHICLE & FORGERY MISSION
         </h2>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
