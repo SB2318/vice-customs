@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { LiveryState } from '../../types';
+import { LiveryState, AppMode } from '../../types';
 import { audioEngine } from '../../utils/audioEngine';
 import { downloadLiveryJson, readLiveryJsonFile } from '../../utils/shareUtils';
 import { Download, Camera, Save, X, Check, Image as ImageIcon, Upload, Trash2, FolderOpen, FileCode, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -10,7 +10,7 @@ interface ExportModalProps {
   canvasElement: HTMLCanvasElement | null;
   liveryState: LiveryState;
   onLoadLivery?: (state: Partial<LiveryState>) => void;
-  appMode?: 'studio' | 'heist';
+  appMode?: AppMode;
 }
 
 interface SavedGarageSlot {
@@ -184,16 +184,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           >
             <ImageIcon size={15} /> 📷 2D &amp; 3D Visual PNGs
           </button>
-          {appMode !== 'heist' && (
-            <button
-              onClick={() => setActiveTab('json_garage')}
-              className={`flex-1 py-2 rounded-lg text-xs font-vice transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'json_garage' ? 'bg-vice-cyan text-black font-bold shadow-neon-cyan' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <FileCode size={15} /> 💾 JSON &amp; Garage Storage ({garageSlots.length})
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('json_garage')}
+            className={`flex-1 py-2 rounded-lg text-xs font-vice transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'json_garage' ? 'bg-vice-cyan text-black font-bold shadow-neon-cyan' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <FileCode size={15} /> 💾 JSON &amp; Garage Storage ({garageSlots.length})
+          </button>
         </div>
 
         {/* JSON Error Banner */}

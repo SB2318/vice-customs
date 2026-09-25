@@ -3,6 +3,7 @@ import { LiveryState, DecalLayer, ViewMode, CameraPreset, GraphicsQuality, AppMo
 import { PRESET_LIVERIES } from './utils/presetLiveries';
 import { useLiveryHistory } from './utils/useLiveryHistory';
 import { decodeLiveryFromUrl } from './utils/shareUtils';
+import { audioEngine } from './utils/audioEngine';
 import { Header } from './components/UI/Header';
 import { ViceRadio } from './components/UI/ViceRadio';
 import { LiveryCanvas } from './components/Canvas2D/LiveryCanvas';
@@ -15,9 +16,10 @@ import { HeistGameTourModal } from './components/UI/HeistGameTourModal';
 import { KeyboardShortcutsModal } from './components/UI/KeyboardShortcutsModal';
 import { ViceOutrunGameModal } from './components/UI/ViceOutrunGameModal';
 import { HeistMissionHub } from './components/UI/HeistMissionHub';
+import { JourneyStoryHub } from './components/UI/JourneyStoryHub';
 import { EvidenceEditorModal } from './components/UI/EvidenceEditorModal';
 import { StoryConsequenceModal } from './components/UI/StoryConsequenceModal';
-import { GripVertical, GripHorizontal, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GripVertical, GripHorizontal, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Car, Flame, Sparkles, Download } from 'lucide-react';
 
 // Mobile-only bottom tab
 type MobileTab = '2d' | '3d';
@@ -263,6 +265,13 @@ export const App: React.FC = () => {
   const show2D = viewMode === 'split' || viewMode === '2d_only';
   const show3D = viewMode === 'split' || viewMode === '3d_only';
 
+  const handleSelectAppMode = useCallback((nextMode: AppMode) => {
+    if (nextMode === appMode) return;
+    setIsLoadingVehicle(true);
+    setAppMode(nextMode);
+    setTimeout(() => setIsLoadingVehicle(false), 450);
+  }, [appMode]);
+
   return (
     <div
       onPointerMove={handlePointerMove}
@@ -276,7 +285,7 @@ export const App: React.FC = () => {
         viewMode={viewMode}
         onSelectViewMode={setViewMode}
         appMode={appMode}
-        onSelectAppMode={setAppMode}
+        onSelectAppMode={handleSelectAppMode}
         onOpenPresetsModal={() => setIsPresetsOpen(true)}
         onOpenExportModal={() => setIsExportOpen(true)}
         onOpenTour={() => setIsGameTourOpen(true)}
@@ -286,18 +295,102 @@ export const App: React.FC = () => {
         canRedo={canRedo}
       />
 
-      {/* ── MODE 1: VEHICLE HEIST MODE (THE FORGER) ── */}
-      {appMode === 'heist' ? (
-        <HeistMissionHub
-          onSelectMission={handleSelectHeistMission}
-          onOpenTour={() => setIsGameTourOpen(true)}
-        />
-      ) : (
-        /* ── MODE 2: VICE CUSTOMS GARAGE STUDIO MODE ── */
-        <main
-          ref={mainContainerRef}
-          className="flex-1 flex flex-col lg:flex-row p-1.5 sm:p-2 lg:p-3 min-h-0 relative gap-0 overflow-hidden"
-        >
+      {/* Smooth Mode Transition Wrapper */}
+      <div key={appMode} className="flex-1 w-full flex flex-col min-h-0 relative overflow-hidden animate-fadeIn transition-opacity duration-300">
+        {/* ── MODE 1: VEHICLE HEIST MODE (THE FORGER) ── */}
+        {appMode === 'heist' ? (
+          <HeistMissionHub
+            onSelectMission={handleSelectHeistMission}
+            onOpenTour={() => setIsGameTourOpen(true)}
+          />
+        ) : appMode === 'journey' ? (
+          /* ── MODE 2: JOURNEY STORIES MODE ── */
+          <JourneyStoryHub
+            onSelectStory={(storyId) => {
+              // Automatically load first heist mission for story demo
+              const mission = PRESET_LIVERIES[0];
+              setIsGameTourOpen(true);
+            }}
+            onOpenTour={() => setIsGameTourOpen(true)}
+          />
+        ) : (
+          /* ── MODE 3: VICE CUSTOMS GARAGE STUDIO MODE ── */
+          <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden">
+            {/* Dedicated Garage Studio Toolbar (Only in Garage Mode) */}
+            <div className="px-3 py-1.5 bg-[#0b0b16] border-b border-vice-border flex items-center justify-between gap-2 shrink-0 overflow-x-auto scrollbar-none">
+              {/* Vehicle Model Pills */}
+              <div className="flex items-center gap-1 bg-[#121224] p-0.5 rounded-xl border border-vice-border shrink-0 overflow-x-auto scrollbar-none max-w-[50vw] sm:max-w-none">
+                {(['infernus', 'cheetah', 'banshee', 'comet', 'dominator', 'dirtbike', 'train', 'boat', 'helicopter'] as const).map((vm) => (
+                  <button
+                    key={vm}
+                    onClick={() => {
+                      handleUpdateLiveryState({ vehicle: vm });
+                      audioEngine.playClickSFX();
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-vice uppercase transition-all whitespace-nowrap ${
+                      liveryState.vehicle === vm
+                        ? 'bg-vice-pink text-white font-bold shadow-neon-pink'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {vm}
+                  </button>
+                ))}
+              </div>
+
+              {/* View Mode & Actions Container */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* View Mode Toggle */}
+                <div className="flex bg-[#121224] p-0.5 rounded-xl border border-vice-border text-[10px] font-vice">
+                  {(['split', '2d_only', '3d_only'] as ViewMode[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        setViewMode(m);
+                        audioEngine.playTransitionSFX();
+                      }}
+                      className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all ${
+                        viewMode === m ? 'bg-vice-cyan text-black font-bold shadow-neon-cyan' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {m === 'split' ? 'SPLIT' : m === '2d_only' ? '2D' : '3D'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Rev Engine */}
+                <button
+                  onClick={() => {
+                    audioEngine.revEngine(2200, () => {});
+                  }}
+                  className="px-2.5 py-1 bg-gradient-to-r from-vice-orange to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-vice text-[10px] font-black rounded-xl shadow-lg transition-all flex items-center gap-1 border border-yellow-400/40 whitespace-nowrap shrink-0"
+                >
+                  <Flame size={12} className="text-yellow-300 animate-pulse" />
+                  REV!
+                </button>
+
+                {/* Presets Modal */}
+                <button
+                  onClick={() => setIsPresetsOpen(true)}
+                  className="px-2.5 py-1 bg-[#141426] hover:bg-vice-card border border-vice-border hover:border-vice-pink text-vice-pink font-vice text-[10px] rounded-xl transition-all flex items-center gap-1 whitespace-nowrap shrink-0"
+                >
+                  <Sparkles size={12} /> PRESETS
+                </button>
+
+                {/* Export & JSON */}
+                <button
+                  onClick={() => setIsExportOpen(true)}
+                  className="px-3 py-1 bg-vice-pink hover:bg-pink-600 text-white font-vice text-[10px] font-bold rounded-xl shadow-neon-pink transition-all flex items-center gap-1 whitespace-nowrap shrink-0"
+                >
+                  <Download size={12} /> EXPORT &amp; JSON
+                </button>
+              </div>
+            </div>
+
+            <main
+              ref={mainContainerRef}
+              className="flex-1 flex flex-col lg:flex-row p-1.5 sm:p-2 lg:p-3 min-h-0 relative gap-0 overflow-hidden"
+            >
           {/* 2D Canvas & Editor Suite Panel */}
           <div
             ref={leftPanelRef}
@@ -423,7 +516,9 @@ export const App: React.FC = () => {
             />
           </div>
         </main>
-      )}
+      </div>
+    )}
+  </div>
 
       {/* Mobile Bottom Navigation Bar */}
       {appMode === 'studio' && (

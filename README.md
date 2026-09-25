@@ -1,10 +1,11 @@
 # Vice Customs - Vehicle Heist: Edit. Escape. Survive.
 
-> Built for the #BuiltWithImageEditor Challenge by Unlayer - Submission deadline: September 24, 2026
+> Built with **Google Antigravity Excellence** for the #BuiltWithImageEditor Challenge by Unlayer
 
 **Live Demo**: [https://automatic-bassoon.vercel.app](https://automatic-bassoon.vercel.app)
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?logo=vercel&logoColor=white)](https://automatic-bassoon.vercel.app)
+[![Built with Google Antigravity](https://img.shields.io/badge/Made%20with-Google%20Antigravity-4285F4?logo=google&logoColor=white)](https://antigravity.google)
 [![Made with React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-black?logo=three.js)](https://threejs.org)
 [![Unlayer React Image Editor](https://img.shields.io/badge/Unlayer-React%20Image%20Editor-ff6b35)](https://github.com/unlayer/react-image-editor)
@@ -16,12 +17,12 @@
 
 ## Overview: Dual-Mode Architecture
 
-**Vice Customs: Vehicle Heist** is a dual-mode application combining a GTA VI-inspired **3D/2D Car Customization Studio** with an interactive narrative crime game called **VEHICLE HEIST — Edit. Escape. Survive.**
+**Vice Customs: Vehicle Heist** is a dual-mode web application combining a GTA VI-inspired **3D/2D Car Customization Studio** with an interactive narrative crime game called **VEHICLE HEIST — Edit. Escape. Survive.**
 
 Users can freely toggle between two primary experiences:
 
 1. **VICE CUSTOMS (Garage Studio)**: Full-featured freeplay 3D car customization studio with WebGL rendering, paint finishes, decals, dynamic environments, procedural V8 engine sounds, and live 2D UV texture mapping powered by `@unlayer/react-image-editor`.
-2. **VEHICLE HEIST (The Forger)**: Interactive heist game where players choose a getaway vehicle path, inspect surveillance evidence, and use **THE FORGER** (powered by `@unlayer/react-image-editor`) to alter photos and rewrite story consequences.
+2. **VEHICLE HEIST (The Forger)**: Interactive heist game where players choose a getaway vehicle path, inspect surveillance evidence, doctor photos using **THE FORGER** (powered by `@unlayer/react-image-editor`), customize 3D getaway rides in the **3D Garage Customizer**, and evade police in live 3D pursuits.
 
 ---
 
@@ -43,15 +44,36 @@ Front bumper damage        Save Forgery          Mission Complete + $5,000
 
 ---
 
-## 5 Getaway Vehicle Story Paths
+## 5 Getaway Vehicle Story Paths & Vehicle Models
 
-| Vehicle | Mission | Image-Editing Challenge |
-|---|---|---|
-| Car | Lose the Cameras | Respray paint color, obscure license plate VC-4821, fix bumper damage |
-| Motorbike | Ghost Rider | Alter helmet art, obscure rider jacket logo, remove bike decals |
-| Train | Hijack Express | Modify destination board text from Downtown to Harbor, obscure transit logo |
-| Speedboat | Midnight Run | Change hull color, overwrite vessel name Ocean Breeze, remove red markings |
-| Helicopter | Sky Escape | Modify registration callsign on tail fin, disguise searchlight lens |
+| Vehicle Path | Mission | Image-Editing Challenge | 3D Vehicle Models |
+|---|---|---|---|
+| **Car** | Lose the Cameras | Respray paint color, obscure license plate VC-4821, fix bumper damage | **Infernus**, **Cheetah**, **Banshee**, **Comet**, **Dominator** |
+| **Motorbike** | Ghost Rider | Alter helmet art, obscure rider jacket logo, remove bike decals | **Street Demon DirtBike** |
+| **Train** | Hijack Express | Modify destination board text from Downtown to Harbor, obscure transit logo | **Bullet Train Locomotive** |
+| **Speedboat** | Midnight Run | Change hull color, overwrite vessel name Ocean Breeze, remove red markings | **Midnight Powerboat** |
+| **Helicopter** | Sky Escape | Modify registration callsign on tail fin, disguise searchlight lens | **Stealth Helo** |
+
+---
+
+## 3D Garage Customizer (Draggable, Fullscreen, Collapsible)
+
+The **3D Garage Customizer** embedded inside the 3D Forgery Editor provides high-end 2D/3D studio controls:
+
+- **Split / 2D / 3D View Modes**: Switch seamlessly between 2D canvas, 3D WebGL viewport, or side-by-side Split view.
+- **Draggable Splitter**: Drag the split barrier between the 2D UV texture canvas and the 3D WebGL viewport to adjust layout proportions.
+- **Fullscreen & Collapsible Controls**: Expand the 3D Customizer to full screen (`⊕` / `⊖`) or collapse/expand the panel (`▲` / `▼`).
+- **Vehicle-Specific Controls**: Car missions feature quick selectors for Infernus, Cheetah, Banshee, Comet, and Dominator, while Bike, Train, Boat, and Helicopter missions display their specific models.
+
+---
+
+## Full Export Studio (2D, 3D & JSON Configs)
+
+The **Full Export Studio** modal allows users to export and import design assets across all modes:
+
+- **2D UV Texture Export**: Download 1024x1024 unwrapped PNG texture maps.
+- **3D Studio Render Export**: Download full-resolution WebGL studio snapshots.
+- **JSON Import & Export**: Export livery configurations as `.json` files or upload existing JSON presets to apply across vehicles.
 
 ---
 
@@ -97,6 +119,7 @@ Front bumper damage        Save Forgery          Mission Complete + $5,000
 
 | Layer | Technology |
 |---|---|
+| AI Development | **Google Antigravity** |
 | UI Framework | React 18 + TypeScript |
 | Build Tool | Vite 5 |
 | Styling | Tailwind CSS 3 |
@@ -155,7 +178,7 @@ npm run preview
 1. Push code to GitHub:
    ```bash
    git add .
-   git commit -m "chore: update readme for dual mode vehicle heist and vice customs"
+   git commit -m "chore: update readme with google antigravity and 3d garage customizer features"
    git push origin main
    ```
 2. Go to vercel.com/new and import the repository.
@@ -184,9 +207,10 @@ automatic-bassoon/
 │   │   └── UI/
 │   │       ├── Header.tsx              # Mode selector, audio mute, vehicle selection
 │   │       ├── HeistMissionHub.tsx     # Vehicle heist dossier & getaway selection
-│   │       ├── EvidenceEditorModal.tsx # Embedded Unlayer evidence forgery suite
+│   │       ├── EvidenceEditorModal.tsx # Embedded Unlayer evidence forgery & 3D Garage customizer
+│   │       ├── OnboardingTourModal.tsx # 5-step onboarding tour with Google Antigravity branding
 │   │       ├── StoryConsequenceModal.tsx # Dynamic narrative loop cutscenes
-│   │       ├── ExportModal.tsx         # Ready to Print UV & 3D render export
+│   │       ├── ExportModal.tsx         # Ready to Print UV, 3D render & JSON config export
 │   │       ├── ViceOutrunGameModal.tsx # Heist evasion game mode & wanted level engine
 │   │       └── ViceRadio.tsx           # Synthwave radio player component
 │   ├── utils/
@@ -209,14 +233,15 @@ automatic-bassoon/
 1. Select **Garage Studio** in the top navigation bar.
 2. Select vehicle model, base paint, finishes, decals, and custom license plate.
 3. Switch to the Unlayer Editor tab to design custom graphics composite wraps.
-4. Toggle 3D environments (Studio, Rain, Synthwave, Cyberpunk) and export print-ready 1024x1024 UV maps.
+4. Toggle 3D environments (Studio, Rain, Synthwave, Cyberpunk) and export print-ready 1024x1024 UV maps or JSON presets.
 
 ### Mode 2: VEHICLE HEIST (The Forger)
 1. Select **Vehicle Heist** in the top navigation bar.
 2. Choose your getaway vehicle (Car, Motorbike, Train, Speedboat, Helicopter).
 3. Inspect intercepted surveillance evidence photos.
 4. Forge the evidence in **Unlayer Image Editor** (respray colors, obscure plates, alter train destination text).
-5. Submit forgery and watch the story outcome unfold dynamically based on your edited image.
+5. Switch to **3D Garage Customizer** to adjust vehicle specs in 3D (with draggable split, view modes, and fullscreen).
+6. Submit forgery and watch the story outcome unfold dynamically based on your edited image.
 
 ---
 

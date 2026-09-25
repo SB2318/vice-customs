@@ -78,145 +78,70 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center justify-between px-2.5 sm:px-4 py-2 gap-2 w-full max-w-full">
 
         {/* ── LEFT SECTION: BRANDING & VEHICLE SELECTOR ── */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
           {/* Logo */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-vice-pink to-vice-purple flex items-center justify-center text-white text-base sm:text-lg shadow-neon-pink font-extrabold shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-vice-pink to-vice-purple flex items-center justify-center text-white text-sm sm:text-base shadow-neon-pink font-extrabold shrink-0">
               🌴
             </div>
             <div>
-              <h1 className="text-xs sm:text-base font-vice font-black tracking-wider bg-gradient-to-r from-vice-pink via-vice-cyan to-vice-yellow bg-clip-text text-transparent">
+              <h1 className="text-xs sm:text-sm font-vice font-black tracking-wider bg-gradient-to-r from-vice-pink via-vice-cyan to-vice-yellow bg-clip-text text-transparent leading-none">
                 VICE CUSTOMS
               </h1>
-              <p className="text-[8px] sm:text-[9px] font-vice text-cyan-400 tracking-wider uppercase block font-semibold">
+              <p className="text-[7px] sm:text-[8px] font-vice text-cyan-400 tracking-wider uppercase block font-semibold mt-0.5 whitespace-nowrap">
                 MADE WITH GOOGLE ANTIGRAVITY
               </p>
             </div>
           </div>
 
-          <div className="hidden sm:block w-[1px] h-5 bg-gray-800 mx-0.5" />
+          <div className="hidden sm:block w-[1px] h-4 bg-gray-800 mx-0.5" />
 
-          {/* DUAL MODE TOGGLE BUTTONS (GARAGE STUDIO vs VEHICLE HEIST FOCUSABLE) */}
+          {/* THREE MAIN MODE TOGGLE TABS (GARAGE STUDIO, VEHICLE HEIST, JOURNEY STORIES) */}
           <div className="flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shrink-0 shadow-md">
             <button
               onClick={() => {
                 audioEngine.playTransitionSFX();
                 onSelectAppMode('studio');
               }}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1 ${
                 appMode === 'studio'
                   ? 'bg-gradient-to-r from-vice-pink to-purple-600 text-white shadow-neon-pink'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Car size={13} /> GARAGE
+              <Car size={12} /> GARAGE
             </button>
             <button
               onClick={() => {
                 audioEngine.playTransitionSFX();
                 onSelectAppMode('heist');
               }}
-              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1 ${
                 appMode === 'heist'
-                  ? 'bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white shadow-neon-cyan ring-2 ring-pink-500/60'
+                  ? 'bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white shadow-neon-cyan ring-1 ring-pink-500/60'
                   : 'text-pink-400 bg-pink-950/30 border border-pink-500/40 hover:text-white hover:bg-pink-900/50'
               }`}
             >
-              <ShieldAlert size={13} className="text-pink-400 animate-pulse" /> VEHICLE HEIST
+              <ShieldAlert size={12} className="text-pink-400 animate-pulse" /> VEHICLE HEIST
+            </button>
+            <button
+              onClick={() => {
+                audioEngine.playTransitionSFX();
+                onSelectAppMode('journey');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-vice font-bold uppercase transition-all flex items-center gap-1 ${
+                appMode === 'journey'
+                  ? 'bg-gradient-to-r from-cyan-500 via-pink-500 to-yellow-400 text-slate-950 font-black shadow-neon-cyan'
+                  : 'text-cyan-400 bg-cyan-950/30 border border-cyan-500/40 hover:text-white hover:bg-cyan-900/50'
+              }`}
+            >
+              <Sparkles size={12} className="text-cyan-300" /> JOURNEY STORIES
             </button>
           </div>
-
-          <div className="hidden lg:block w-[1px] h-5 bg-gray-800 mx-0.5" />
-
-          {/* VEHICLE MODEL SELECTOR - Desktop Pills (only in studio mode) */}
-          {appMode === 'studio' && (
-            <div className="hidden lg:flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shrink-0 shadow-md">
-              {vehicles.map((vm) => (
-                <button
-                  key={vm}
-                  onClick={() => {
-                    onUpdateState({ vehicle: vm });
-                    audioEngine.playClickSFX();
-                  }}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-vice uppercase transition-all whitespace-nowrap ${
-                    liveryState.vehicle === vm
-                      ? 'bg-vice-pink text-white font-bold shadow-neon-pink'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {vm}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* VEHICLE MODEL SELECTOR - Mobile Dropdown */}
-          {appMode === 'studio' && (
-            <div className="lg:hidden">
-              <select
-                value={liveryState.vehicle}
-                onChange={(e) => {
-                  onUpdateState({ vehicle: e.target.value as VehicleModel });
-                  audioEngine.playClickSFX();
-                }}
-                className="bg-[#121224] text-vice-pink border border-vice-border rounded-lg px-2 py-1 text-xs font-vice uppercase font-bold focus:outline-none"
-              >
-                {vehicles.map((vm) => (
-                  <option key={vm} value={vm} className="bg-[#121224] text-white">
-                    {vm}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
-        {/* ── CENTER SECTION: UNDO / REDO & VIEW MODE ── */}
-        {appMode === 'studio' && <div className="hidden md:flex items-center gap-2 shrink-0">
-          {/* Undo / Redo */}
-          <div className="flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shadow-md">
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              title="Undo (Ctrl+Z)"
-              className={`p-1.5 rounded-lg transition-all ${
-                canUndo ? 'text-vice-pink hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
-              }`}
-            >
-              <Undo2 size={14} />
-            </button>
-            <button
-              onClick={onRedo}
-              disabled={!canRedo}
-              title="Redo (Ctrl+Y)"
-              className={`p-1.5 rounded-lg transition-all ${
-                canRedo ? 'text-vice-cyan hover:bg-white/10' : 'text-gray-600 cursor-not-allowed'
-              }`}
-            >
-              <Redo2 size={14} />
-            </button>
-          </div>
-
-          {/* View mode toggle */}
-          <div className="flex bg-[#121224] p-0.5 rounded-xl border border-vice-border text-[11px] font-vice shadow-md">
-            {(['split', '2d_only', '3d_only'] as ViewMode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => {
-                  onSelectViewMode(m);
-                  audioEngine.playTransitionSFX();
-                }}
-                className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all ${
-                  viewMode === m ? 'bg-vice-cyan text-black font-bold shadow-neon-cyan' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {m === 'split' ? 'SPLIT' : m === '2d_only' ? '2D' : '3D'}
-              </button>
-            ))}
-          </div>
-        </div>}
-
-        {appMode === 'studio' && <div className="hidden md:flex items-center gap-1.5 shrink-0">
+        {/* ── RIGHT GLOBAL CONTROLS ── */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Sound Mute Toggle */}
           <button
             onClick={handleToggleMute}
@@ -227,86 +152,8 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title={isMuted ? "Unmute Audio SFX" : "Mute Audio SFX"}
           >
-            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-          </button>
-
-          <button
-            onClick={handleRevEngine}
-            className="group px-3 py-1.5 bg-gradient-to-r from-vice-orange to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-vice text-[11px] font-black rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-1 border border-yellow-400/40 whitespace-nowrap shrink-0"
-          >
-            <Flame size={14} className="text-yellow-300 animate-pulse" />
-            REV!
-          </button>
-
-
-
-          {/* Presets */}
-          <button
-            onClick={onOpenPresetsModal}
-            className="px-2.5 py-1.5 bg-[#141426] hover:bg-vice-card border border-vice-border hover:border-vice-pink text-vice-pink font-vice text-[11px] rounded-xl transition-all flex items-center gap-1 whitespace-nowrap shrink-0"
-          >
-            <Sparkles size={13} /> PRESETS
-          </button>
-
-          {/* 💾 EXPORT & JSON - PROMINENT & NEVER HIDDEN */}
-          <button
-            onClick={onOpenExportModal}
-            className="px-3.5 py-1.5 bg-vice-pink hover:bg-pink-600 text-white font-vice text-[11px] font-bold rounded-xl shadow-neon-pink transition-all flex items-center gap-1.5 whitespace-nowrap hover:scale-105 active:scale-95 shrink-0"
-            title="Export 2D/3D PNGs & JSON Livery Files"
-          >
-            <Download size={14} /> 💾 EXPORT &amp; JSON
-          </button>
-        </div>}
-
-        {/* ── MOBILE ROW ACTIONS (< md) ── */}
-        <div className="flex md:hidden items-center gap-1.5 shrink-0">
-          {/* Mobile Mute button */}
-          <button
-            onClick={handleToggleMute}
-            className={`p-1.5 rounded-xl border transition-all ${
-              isMuted
-                ? 'bg-red-500/20 border-red-500/60 text-red-400'
-                : 'bg-[#121224] border-vice-cyan text-vice-cyan'
-            }`}
-            title={isMuted ? "Unmute Audio SFX" : "Mute Audio SFX"}
-          >
             {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
-
-          {/* Mobile Undo */}
-          {onUndo && (
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              className={`p-1.5 rounded-xl border border-vice-border transition-all ${
-                canUndo ? 'bg-[#121224] text-vice-pink' : 'bg-[#121224]/50 text-gray-600'
-              }`}
-            >
-              <Undo2 size={14} />
-            </button>
-          )}
-
-          {/* Mobile Export quick button */}
-          {appMode === 'studio' && (
-            <button
-              onClick={onOpenExportModal}
-              className="px-2.5 py-1.5 bg-vice-pink text-white rounded-xl shadow-neon-pink flex items-center gap-1 text-[10px] font-vice font-bold shrink-0"
-              title="Export & JSON"
-            >
-              <Download size={14} />
-              <span>EXPORT</span>
-            </button>
-          )}
-
-          {/* Hamburger */}
-          {appMode === 'studio' && (
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1.5 bg-[#121224] border border-vice-border rounded-xl text-gray-300 hover:text-white shrink-0"
-            >
-              {menuOpen ? <X size={17} /> : <Menu size={17} />}
-            </button>
-          )}
         </div>
       </div>
 

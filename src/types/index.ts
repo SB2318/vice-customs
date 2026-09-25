@@ -90,7 +90,7 @@ export interface PresetLivery {
   state: Partial<LiveryState>;
 }
 
-export type AppMode = 'studio' | 'heist';
+export type AppMode = 'studio' | 'heist' | 'journey';
 
 export type GetawayVehicleType = 'car' | 'bike' | 'train' | 'boat' | 'helicopter' | 'final';
 

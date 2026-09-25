@@ -9,7 +9,7 @@ import { LiveryCanvas } from '../Canvas2D/LiveryCanvas';
 import { Toolbar2D } from '../Canvas2D/Toolbar2D';
 import { ExportModal } from './ExportModal';
 import { ViceRadio } from './ViceRadio';
-import { X, CheckCircle2, ShieldAlert, Send, Layers, Clock, Sparkles, AlertTriangle, Edit3, Download, Upload, Paintbrush, FileCode, Check, Car, Box, RefreshCw, Maximize2, Minimize2, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, CheckCircle2, ShieldAlert, Send, Layers, Clock, Sparkles, AlertTriangle, Edit3, Download, Upload, Paintbrush, FileCode, Check, Car, Bike, Train, Ship, Navigation, Box, RefreshCw, Maximize2, Minimize2, ChevronUp, ChevronDown } from 'lucide-react';
 
 // ── Error Boundary so Unlayer crash never shows a blank screen ────────────────
 interface EBState { hasError: boolean; }
@@ -118,8 +118,15 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
       final: 'infernus'
     };
     const targetModel = vehicleMapping[mission.vehicleType] || 'infernus';
-    if (onUpdateLiveryState && liveryState?.vehicle !== targetModel) {
-      onUpdateLiveryState({ vehicle: targetModel });
+    const isCarType = mission.vehicleType === 'car' || mission.vehicleType === 'final';
+    const isCurrentVehicleCar = ['infernus', 'cheetah', 'banshee', 'comet', 'dominator'].includes(liveryState?.vehicle || '');
+
+    if (onUpdateLiveryState) {
+      if (isCarType && !isCurrentVehicleCar) {
+        onUpdateLiveryState({ vehicle: 'infernus' });
+      } else if (!isCarType && liveryState?.vehicle !== targetModel) {
+        onUpdateLiveryState({ vehicle: targetModel });
+      }
     }
   }, [isOpen, mission?.id, mission?.vehicleType, onUpdateLiveryState]);
 
@@ -556,18 +563,26 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
         <div className="flex-1 w-full flex flex-col bg-slate-950 overflow-hidden min-h-0">
           {/* Vehicle Name Bar + View Mode Controls + Fullscreen/Collapse */}
           <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 flex-wrap sm:flex-nowrap">
-            <div className="flex items-center gap-3 shrink-0">
-              <Car className="w-4 h-4 text-cyan-400" />
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
+              {mission.vehicleType === 'bike' ? (
+                <Bike className="w-4 h-4 text-yellow-400" />
+              ) : mission.vehicleType === 'train' ? (
+                <Train className="w-4 h-4 text-cyan-400" />
+              ) : mission.vehicleType === 'boat' ? (
+                <Ship className="w-4 h-4 text-emerald-400" />
+              ) : mission.vehicleType === 'helicopter' ? (
+                <Navigation className="w-4 h-4 text-purple-400" />
+              ) : (
+                <Car className="w-4 h-4 text-cyan-400" />
+              )}
+
               <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                VEHICLE: {VEHICLE_OPTIONS.find(v => v.model === liveryState?.vehicle)?.label || liveryState?.vehicle?.toUpperCase() || 'UNKNOWN'}
-              </span>
-              <span className="text-[10px] font-mono text-slate-500">
-                ({mission.vehicleType.toUpperCase()} CLASS)
+                VEHICLE:
               </span>
 
-              {/* For Car / Final missions, allow choosing car models (Infernus, Cheetah, Banshee, Comet, Dominator) */}
-              {(mission.vehicleType === 'car' || mission.vehicleType === 'final') && (
-                <div className="flex items-center gap-1 ml-2">
+              {/* CAR SPECIFIC OPTIONS (Infernus, Cheetah, Banshee, Comet, Dominator) */}
+              {(mission.vehicleType === 'car' || mission.vehicleType === 'final') ? (
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {VEHICLE_OPTIONS.filter(v => ['infernus', 'cheetah', 'banshee', 'comet', 'dominator'].includes(v.model)).map((carOpt) => {
                     const isSelected = liveryState?.vehicle === carOpt.model;
                     return (
@@ -577,16 +592,21 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
                           audioEngine.playClickSFX();
                           onUpdateLiveryState?.({ vehicle: carOpt.model });
                         }}
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
                           isSelected
-                            ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30 border border-cyan-400'
-                            : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+                            ? 'bg-gradient-to-r from-pink-600 to-cyan-600 text-white shadow-md shadow-pink-500/20 border border-cyan-400 font-extrabold scale-105'
+                            : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white hover:border-slate-700'
                         }`}
                       >
                         {carOpt.label}
                       </button>
                     );
                   })}
+                </div>
+              ) : (
+                /* SPECIFIC NON-CAR VEHICLE BADGE (Bike / Train / Boat / Helicopter) */
+                <div className="inline-flex items-center px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-cyan-300 shadow-inner">
+                  {VEHICLE_OPTIONS.find(v => v.model === liveryState?.vehicle)?.label || liveryState?.vehicle?.toUpperCase() || 'UNKNOWN'}
                 </div>
               )}
             </div>
