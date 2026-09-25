@@ -7,8 +7,9 @@ import { downloadForgeryJson, readForgeryJsonFile } from '../../utils/shareUtils
 import { GarageScene } from '../Three3D/GarageScene';
 import { LiveryCanvas } from '../Canvas2D/LiveryCanvas';
 import { Toolbar2D } from '../Canvas2D/Toolbar2D';
+import { ExportModal } from './ExportModal';
 import { ViceRadio } from './ViceRadio';
-import { X, CheckCircle2, ShieldAlert, Send, Layers, Clock, Sparkles, AlertTriangle, Edit3, Download, Upload, Paintbrush, FileCode, Check, Car, Box, RefreshCw } from 'lucide-react';
+import { X, CheckCircle2, ShieldAlert, Send, Layers, Clock, Sparkles, AlertTriangle, Edit3, Download, Upload, Paintbrush, FileCode, Check, Car, Box, RefreshCw, Maximize2, Minimize2, ChevronUp, ChevronDown } from 'lucide-react';
 
 // ── Error Boundary so Unlayer crash never shows a blank screen ────────────────
 interface EBState { hasError: boolean; }
@@ -89,6 +90,16 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
   const [garageCanvasElement, setGarageCanvasElement] = useState<HTMLCanvasElement | null>(null);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('front_34');
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>('high');
+
+  // Full Export Modal State in Forgery Editor
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // 3D Garage Customizer panel controls
+  const [garageViewMode, setGarageViewMode] = useState<'split' | '2d' | '3d'>('split');
+  const [garageFullscreen, setGarageFullscreen] = useState(false);
+  const [garageCollapsed, setGarageCollapsed] = useState(false);
+  const [garageSplitPct, setGarageSplitPct] = useState(45);
+  const isDraggingGarageSplit = useRef(false);
 
   // JSON Import/Export state & refs
   const jsonInputRef = useRef<HTMLInputElement>(null);
@@ -273,10 +284,7 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
           </div>
         </div>
 
-        {/* Global Sound Controller (REVI + MUSIC + Master Mute) */}
-        <div className="hidden sm:flex items-center gap-2">
-          <ViceRadio compact showRev />
-        </div>
+        {/* Sound controls removed from Vehicle Heist editor – use footer radio instead */}
 
         {/* Mode Tab Switcher: Forgery Evidence vs 3D Garage Customizer */}
         <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 shrink-0">
@@ -319,32 +327,15 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
             Objectives ({mission.objectives.length})
           </button>
 
-          {/* JSON Export Button */}
+          {/* Full Export Modal Trigger Button */}
           <button
-            onClick={handleExportJson}
-            title="Export Evidence Forgery as .json configuration file"
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-mono text-xs transition-colors"
+            onClick={() => { audioEngine.playClickSFX(); setIsExportModalOpen(true); }}
+            title="Full Export Studio: Download 2D & 3D PNG renders"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-600 hover:bg-pink-500 text-white font-mono font-bold text-xs shadow-md shadow-pink-500/20 transition-all"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
-            <span>EXPORT JSON</span>
+            <Download className="w-3.5 h-3.5 text-white" />
+            <span>FULL EXPORT</span>
           </button>
-
-          {/* JSON Import Button */}
-          <button
-            onClick={() => jsonInputRef.current?.click()}
-            title="Import Evidence Forgery .json configuration file"
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-mono text-xs transition-colors"
-          >
-            <Upload className="w-3.5 h-3.5 text-yellow-400" />
-            <span>IMPORT JSON</span>
-          </button>
-          <input
-            ref={jsonInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleImportJson}
-            className="hidden"
-          />
 
           {/* Submit Forgery Button */}
           <button
@@ -563,84 +554,189 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
       ) : (
         /* ── MODE 2: INTEGRATED 3D GARAGE CUSTOMIZER SUITE & VEHICLE SWITCHER ── */
         <div className="flex-1 w-full flex flex-col bg-slate-950 overflow-hidden min-h-0">
-          {/* Vehicle Switcher Bar */}
-          <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 overflow-x-auto">
-            <div className="flex items-center gap-2 shrink-0">
+          {/* Vehicle Name Bar + View Mode Controls + Fullscreen/Collapse */}
+          <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3 shrink-0">
               <Car className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">VEHICLE SELECTION:</span>
+              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                VEHICLE: {VEHICLE_OPTIONS.find(v => v.model === liveryState?.vehicle)?.label || liveryState?.vehicle?.toUpperCase() || 'UNKNOWN'}
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">
+                ({mission.vehicleType.toUpperCase()} CLASS)
+              </span>
+
+              {/* For Car / Final missions, allow choosing car models (Infernus, Cheetah, Banshee, Comet, Dominator) */}
+              {(mission.vehicleType === 'car' || mission.vehicleType === 'final') && (
+                <div className="flex items-center gap-1 ml-2">
+                  {VEHICLE_OPTIONS.filter(v => ['infernus', 'cheetah', 'banshee', 'comet', 'dominator'].includes(v.model)).map((carOpt) => {
+                    const isSelected = liveryState?.vehicle === carOpt.model;
+                    return (
+                      <button
+                        key={carOpt.model}
+                        onClick={() => {
+                          audioEngine.playClickSFX();
+                          onUpdateLiveryState?.({ vehicle: carOpt.model });
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                          isSelected
+                            ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30 border border-cyan-400'
+                            : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {carOpt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {VEHICLE_OPTIONS.map((v) => {
-                const isSelected = liveryState?.vehicle === v.model;
-                return (
+
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle: Split / 2D / 3D */}
+              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-800 gap-0.5">
+                {(['split', '2d', '3d'] as const).map((mode) => (
                   <button
-                    key={v.model}
+                    key={mode}
                     onClick={() => {
                       audioEngine.playClickSFX();
-                      onUpdateLiveryState?.({ vehicle: v.model });
+                      setGarageViewMode(mode);
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-pink-600 to-cyan-600 text-white shadow-md shadow-pink-500/20'
-                        : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-bold uppercase transition-all ${
+                      garageViewMode === mode
+                        ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
+                        : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    {v.label}
+                    {mode === 'split' ? 'SPLIT' : mode === '2d' ? '2D' : '3D'}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={() => {
+                  audioEngine.playClickSFX();
+                  setGarageFullscreen(prev => !prev);
+                }}
+                className={`p-1.5 rounded-lg text-xs font-mono border transition-all ${
+                  garageFullscreen
+                    ? 'bg-cyan-600 text-white border-cyan-500'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+                title={garageFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              >
+                {garageFullscreen ? '⊖' : '⊕'}
+              </button>
+
+              {/* Collapse Toggle */}
+              <button
+                onClick={() => {
+                  audioEngine.playClickSFX();
+                  setGarageCollapsed(prev => !prev);
+                }}
+                className="p-1.5 rounded-lg text-xs font-mono bg-slate-950 text-slate-400 border border-slate-800 hover:text-white transition-all"
+                title={garageCollapsed ? 'Expand Garage' : 'Collapse Garage'}
+              >
+                {garageCollapsed ? '▼' : '▲'}
+              </button>
             </div>
           </div>
 
-          {/* Integrated Split Studio Viewport (2D Canvas + 3D WebGL Scene) */}
-          {liveryState && (
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
-              {/* Left Column: 2D UV Livery Canvas & 2D Toolbar Suite */}
-              <div className="lg:col-span-5 flex flex-col h-full border-r border-slate-800 min-h-0 overflow-hidden">
-                <div className="h-1/2 min-h-[160px] relative border-b border-slate-800">
-                  <LiveryCanvas
-                    liveryState={liveryState}
-                    selectedDecalId={selectedDecalId}
-                    onSelectDecal={setSelectedDecalId}
-                    onUpdateDecal={handleUpdateDecal}
-                    onCanvasRender={setGarageCanvasElement}
-                    onUndo={onUndo || (() => {})}
-                    onRedo={onRedo || (() => {})}
-                    canUndo={!!canUndo}
-                    canRedo={!!canRedo}
-                    onOpenExportModal={() => {}}
-                  />
+          {/* Collapsible Garage Content */}
+          {!garageCollapsed && liveryState && (
+            <div
+              className={`flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative ${
+                garageFullscreen ? 'fixed inset-0 z-50 bg-slate-950' : ''
+              }`}
+              onPointerMove={(e) => {
+                if (!isDraggingGarageSplit.current) return;
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const pct = ((e.clientX - rect.left) / rect.width) * 100;
+                setGarageSplitPct(Math.max(15, Math.min(85, pct)));
+              }}
+              onPointerUp={() => { isDraggingGarageSplit.current = false; }}
+            >
+              {/* 2D Panel */}
+              {(garageViewMode === 'split' || garageViewMode === '2d') && (
+                <div
+                  style={{ width: garageViewMode === '2d' ? '100%' : `${garageSplitPct}%` }}
+                  className="flex flex-col h-full border-r border-slate-800 min-h-0 overflow-hidden shrink-0"
+                >
+                  <div className="h-1/2 min-h-[160px] relative border-b border-slate-800">
+                    <LiveryCanvas
+                      liveryState={liveryState}
+                      selectedDecalId={selectedDecalId}
+                      onSelectDecal={setSelectedDecalId}
+                      onUpdateDecal={handleUpdateDecal}
+                      onCanvasRender={setGarageCanvasElement}
+                      onUndo={onUndo || (() => {})}
+                      onRedo={onRedo || (() => {})}
+                      canUndo={!!canUndo}
+                      canRedo={!!canRedo}
+                      onOpenExportModal={() => {}}
+                    />
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <Toolbar2D
+                      liveryState={liveryState}
+                      onUpdateState={onUpdateLiveryState || (() => {})}
+                      selectedDecalId={selectedDecalId}
+                      onSelectDecal={setSelectedDecalId}
+                      onAddDecal={handleAddDecal}
+                      onUpdateDecal={handleUpdateDecal}
+                      onRemoveDecal={handleRemoveDecal}
+                      canvasDataUrl={garageCanvasElement ? garageCanvasElement.toDataURL() : ''}
+                      onSaveUnlayerImage={(url) => onUpdateLiveryState?.({ unlayerOverlayUrl: url })}
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <Toolbar2D
+              )}
+
+              {/* Draggable Splitter */}
+              {garageViewMode === 'split' && (
+                <div
+                  onPointerDown={(e) => {
+                    isDraggingGarageSplit.current = true;
+                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                  }}
+                  className="w-2 cursor-col-resize bg-slate-800 hover:bg-cyan-600/40 active:bg-cyan-600/60 transition-colors shrink-0 flex items-center justify-center touch-none"
+                >
+                  <div className="w-0.5 h-8 rounded bg-slate-600" />
+                </div>
+              )}
+
+              {/* 3D Panel */}
+              {(garageViewMode === 'split' || garageViewMode === '3d') && (
+                <div
+                  style={{ width: garageViewMode === '3d' ? '100%' : `${100 - garageSplitPct}%` }}
+                  className="flex flex-col h-full relative min-h-0 overflow-hidden bg-slate-950 flex-1"
+                >
+                  <GarageScene
                     liveryState={liveryState}
                     onUpdateState={onUpdateLiveryState || (() => {})}
-                    selectedDecalId={selectedDecalId}
-                    onSelectDecal={setSelectedDecalId}
-                    onAddDecal={handleAddDecal}
-                    onUpdateDecal={handleUpdateDecal}
-                    onRemoveDecal={handleRemoveDecal}
-                    canvasDataUrl={garageCanvasElement ? garageCanvasElement.toDataURL() : ''}
-                    onSaveUnlayerImage={(url) => onUpdateLiveryState?.({ unlayerOverlayUrl: url })}
+                    canvasElement={garageCanvasElement}
+                    cameraPreset={cameraPreset}
+                    onSelectCameraPreset={setCameraPreset}
+                    quality={graphicsQuality}
+                    onSelectQuality={setGraphicsQuality}
                   />
                 </div>
-              </div>
-
-              {/* Right Column: 3D Garage WebGL Viewport */}
-              <div className="lg:col-span-7 flex flex-col h-full relative min-h-0 overflow-hidden bg-slate-950">
-                <GarageScene
-                  liveryState={liveryState}
-                  onUpdateState={onUpdateLiveryState || (() => {})}
-                  canvasElement={garageCanvasElement}
-                  cameraPreset={cameraPreset}
-                  onSelectCameraPreset={setCameraPreset}
-                  quality={graphicsQuality}
-                  onSelectQuality={setGraphicsQuality}
-                />
-              </div>
+              )}
             </div>
           )}
         </div>
+      )}
+
+      {/* Full Export Studio Modal (appMode='heist' hides Export/Import JSON) */}
+      {liveryState && (
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          canvasElement={garageCanvasElement}
+          liveryState={liveryState}
+          onLoadLivery={onUpdateLiveryState}
+          appMode="heist"
+        />
       )}
 
     </div>

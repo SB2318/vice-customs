@@ -88,8 +88,8 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-xs sm:text-base font-vice font-black tracking-wider bg-gradient-to-r from-vice-pink via-vice-cyan to-vice-yellow bg-clip-text text-transparent">
                 VICE CUSTOMS
               </h1>
-              <p className="hidden 2xl:block text-[8px] font-vice text-gray-400 tracking-widest uppercase">
-                VEHICLE HEIST EDITION
+              <p className="text-[8px] sm:text-[9px] font-vice text-cyan-400 tracking-wider uppercase block font-semibold">
+                MADE WITH GOOGLE ANTIGRAVITY
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* ── CENTER SECTION: UNDO / REDO & VIEW MODE ── */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
+        {appMode === 'studio' && <div className="hidden md:flex items-center gap-2 shrink-0">
           {/* Undo / Redo */}
           <div className="flex items-center bg-[#121224] p-0.5 rounded-xl border border-vice-border shadow-md">
             <button
@@ -214,9 +214,9 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             ))}
           </div>
-        </div>
+        </div>}
 
-        <div className="hidden md:flex items-center gap-1.5 shrink-0">
+        {appMode === 'studio' && <div className="hidden md:flex items-center gap-1.5 shrink-0">
           {/* Sound Mute Toggle */}
           <button
             onClick={handleToggleMute}
@@ -256,7 +256,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Download size={14} /> 💾 EXPORT &amp; JSON
           </button>
-        </div>
+        </div>}
 
         {/* ── MOBILE ROW ACTIONS (< md) ── */}
         <div className="flex md:hidden items-center gap-1.5 shrink-0">
@@ -287,27 +287,31 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Mobile Export quick button */}
-          <button
-            onClick={onOpenExportModal}
-            className="px-2.5 py-1.5 bg-vice-pink text-white rounded-xl shadow-neon-pink flex items-center gap-1 text-[10px] font-vice font-bold shrink-0"
-            title="Export & JSON"
-          >
-            <Download size={14} />
-            <span>EXPORT</span>
-          </button>
+          {appMode === 'studio' && (
+            <button
+              onClick={onOpenExportModal}
+              className="px-2.5 py-1.5 bg-vice-pink text-white rounded-xl shadow-neon-pink flex items-center gap-1 text-[10px] font-vice font-bold shrink-0"
+              title="Export & JSON"
+            >
+              <Download size={14} />
+              <span>EXPORT</span>
+            </button>
+          )}
 
           {/* Hamburger */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="p-1.5 bg-[#121224] border border-vice-border rounded-xl text-gray-300 hover:text-white shrink-0"
-          >
-            {menuOpen ? <X size={17} /> : <Menu size={17} />}
-          </button>
+          {appMode === 'studio' && (
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-1.5 bg-[#121224] border border-vice-border rounded-xl text-gray-300 hover:text-white shrink-0"
+            >
+              {menuOpen ? <X size={17} /> : <Menu size={17} />}
+            </button>
+          )}
         </div>
       </div>
 
       {/* ── MOBILE DROPDOWN MENU ── */}
-      {menuOpen && (
+      {appMode === 'studio' && menuOpen && (
         <div className="md:hidden border-t border-vice-border bg-[#0c0c1a] px-3 py-2.5 space-y-2.5 animate-fadeIn">
           {/* View Mode */}
           <div>

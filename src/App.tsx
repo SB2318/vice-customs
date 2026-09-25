@@ -504,6 +504,7 @@ export const App: React.FC = () => {
         canvasElement={canvasElement}
         liveryState={liveryState}
         onLoadLivery={handleLoadLiveryPreset}
+        appMode={appMode}
       />
 
       <ViceOutrunGameModal

@@ -10,6 +10,7 @@ interface ExportModalProps {
   canvasElement: HTMLCanvasElement | null;
   liveryState: LiveryState;
   onLoadLivery?: (state: Partial<LiveryState>) => void;
+  appMode?: 'studio' | 'heist';
 }
 
 interface SavedGarageSlot {
@@ -24,7 +25,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   onClose,
   canvasElement,
   liveryState,
-  onLoadLivery
+  onLoadLivery,
+  appMode = 'studio'
 }) => {
   const [activeTab, setActiveTab] = useState<'images' | 'json_garage'>('images');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -182,14 +184,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           >
             <ImageIcon size={15} /> 📷 2D &amp; 3D Visual PNGs
           </button>
-          <button
-            onClick={() => setActiveTab('json_garage')}
-            className={`flex-1 py-2 rounded-lg text-xs font-vice transition-all flex items-center justify-center gap-2 ${
-              activeTab === 'json_garage' ? 'bg-vice-cyan text-black font-bold shadow-neon-cyan' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <FileCode size={15} /> 💾 JSON &amp; Garage Storage ({garageSlots.length})
-          </button>
+          {appMode !== 'heist' && (
+            <button
+              onClick={() => setActiveTab('json_garage')}
+              className={`flex-1 py-2 rounded-lg text-xs font-vice transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'json_garage' ? 'bg-vice-cyan text-black font-bold shadow-neon-cyan' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <FileCode size={15} /> 💾 JSON &amp; Garage Storage ({garageSlots.length})
+            </button>
+          )}
         </div>
 
         {/* JSON Error Banner */}

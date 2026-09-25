@@ -38,11 +38,16 @@ export const HeistMissionHub: React.FC<HeistMissionHubProps> = ({ onSelectMissio
       {/* Header Banner */}
       <div className="relative z-10 w-full max-w-6xl mb-6 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-pink-500/30 pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-xs font-mono font-bold tracking-widest uppercase mb-1">
-            <ShieldAlert className="w-3.5 h-3.5" /> NEON ESCAPE — 5 INTERCONNECTED CHAPTERS
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-xs font-mono font-bold tracking-widest uppercase">
+              <ShieldAlert className="w-3.5 h-3.5" /> NEON ESCAPE — 5 INTERCONNECTED CHAPTERS
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold tracking-wider uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> MADE WITH GOOGLE ANTIGRAVITY
+            </div>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black font-sans tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 uppercase">
-            VEHICLE HEIST STUDIO — DOCTOR THE EVIDENCE & ESCAPE
+            VEHICLE HEIST STUDIO — DOCTOR THE EVIDENCE &amp; ESCAPE
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
             Choose your getaway vehicle path. Use the Unlayer image editor to doctor surveillance evidence, alter identity markings, fool the police database, and execute live 3D pursuit evasion.
