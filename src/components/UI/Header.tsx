@@ -88,9 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-xs sm:text-sm font-vice font-black tracking-wider bg-gradient-to-r from-vice-pink via-vice-cyan to-vice-yellow bg-clip-text text-transparent leading-none">
                 VICE CUSTOMS
               </h1>
-              <p className="text-[7px] sm:text-[8px] font-vice text-cyan-400 tracking-wider uppercase block font-semibold mt-0.5 whitespace-nowrap">
-                MADE WITH GOOGLE ANTIGRAVITY
-              </p>
+            
             </div>
           </div>
 

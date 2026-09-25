@@ -53,8 +53,8 @@ const STEPS: TourStep[] = [
   },
   {
     eyebrow:  'CHAPTER 05 — SURVIVE OR INCIDENT REPORT',
-    headline: 'GOOGLE ANTIGRAVITY\nEXCELLENCE.',
-    body:     'Evade capture to clear your APB record and complete the heist. Built under Google Antigravity excellence for high-performance 2D/3D web craft.',
+    headline: 'CLEAR YOUR\nAPB RECORD.',
+    body:     'Evade capture to clear your APB record and complete the heist. If caught, submit an incident report and start over with a new vehicle.',
     tip:      'Toggle between VEHICLE HEIST and GARAGE STUDIO anytime in the top header bar.',
     accent:   '#00ff99',
     glyph:    '05',

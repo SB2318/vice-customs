@@ -42,9 +42,7 @@ export const HeistMissionHub: React.FC<HeistMissionHubProps> = ({ onSelectMissio
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-xs font-mono font-bold tracking-widest uppercase">
               <ShieldAlert className="w-3.5 h-3.5" /> NEON ESCAPE — 5 INTERCONNECTED CHAPTERS
             </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold tracking-wider uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> MADE WITH GOOGLE ANTIGRAVITY
-            </div>
+          
           </div>
           <h1 className="text-2xl sm:text-4xl font-black font-sans tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 uppercase">
             VEHICLE HEIST STUDIO — DOCTOR THE EVIDENCE &amp; ESCAPE

@@ -1,11 +1,11 @@
 # Vice Customs - Vehicle Heist: Edit. Escape. Survive.
 
-> Built with **Google Antigravity Excellence** for the #BuiltWithImageEditor Challenge by Unlayer
+> Built for the #BuiltWithImageEditor Challenge by Unlayer
 
 **Live Demo**: [https://automatic-bassoon.vercel.app](https://automatic-bassoon.vercel.app)
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?logo=vercel&logoColor=white)](https://automatic-bassoon.vercel.app)
-[![Built with Google Antigravity](https://img.shields.io/badge/Made%20with-Google%20Antigravity-4285F4?logo=google&logoColor=white)](https://antigravity.google)
+
 [![Made with React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-black?logo=three.js)](https://threejs.org)
 [![Unlayer React Image Editor](https://img.shields.io/badge/Unlayer-React%20Image%20Editor-ff6b35)](https://github.com/unlayer/react-image-editor)
@@ -119,7 +119,6 @@ The **Full Export Studio** modal allows users to export and import design assets
 
 | Layer | Technology |
 |---|---|
-| AI Development | **Google Antigravity** |
 | UI Framework | React 18 + TypeScript |
 | Build Tool | Vite 5 |
 | Styling | Tailwind CSS 3 |
@@ -176,11 +175,7 @@ npm run preview
 ## Deploy to Vercel
 
 1. Push code to GitHub:
-   ```bash
-   git add .
-   git commit -m "chore: update readme with google antigravity and 3d garage customizer features"
-   git push origin main
-   ```
+
 2. Go to vercel.com/new and import the repository.
 3. Configure build settings:
    - Framework Preset: Vite
@@ -208,7 +203,7 @@ automatic-bassoon/
 │   │       ├── Header.tsx              # Mode selector, audio mute, vehicle selection
 │   │       ├── HeistMissionHub.tsx     # Vehicle heist dossier & getaway selection
 │   │       ├── EvidenceEditorModal.tsx # Embedded Unlayer evidence forgery & 3D Garage customizer
-│   │       ├── OnboardingTourModal.tsx # 5-step onboarding tour with Google Antigravity branding
+│   │       ├── OnboardingTourModal.tsx # 5-step onboarding tour 
 │   │       ├── StoryConsequenceModal.tsx # Dynamic narrative loop cutscenes
 │   │       ├── ExportModal.tsx         # Ready to Print UV, 3D render & JSON config export
 │   │       ├── ViceOutrunGameModal.tsx # Heist evasion game mode & wanted level engine
