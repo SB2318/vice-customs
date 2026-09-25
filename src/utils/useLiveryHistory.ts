@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { LiveryState } from '../types';
 
 const MAX_HISTORY_STEPS = 40;
@@ -79,40 +79,6 @@ export function useLiveryHistory(initialState: LiveryState) {
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1;
 
-  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z, Cmd+Z, Cmd+Shift+Z)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept when user is typing in an input or textarea
-      const target = e.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-        return;
-      }
-
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const isCmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
-
-      if (!isCmdOrCtrl) return;
-
-      if (e.key.toLowerCase() === 'z') {
-        if (e.shiftKey) {
-          // Redo
-          e.preventDefault();
-          redo();
-        } else {
-          // Undo
-          e.preventDefault();
-          undo();
-        }
-      } else if (e.key.toLowerCase() === 'y' && !isMac) {
-        // Redo on Windows/Linux
-        e.preventDefault();
-        redo();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
 
   return {
     liveryState: currentState,

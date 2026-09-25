@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { LiveryState, DecalLayer, VehicleModel } from '../../types';
 import { DECAL_LIBRARY } from '../../utils/decalLibrary';
+import { CANVAS_SIZE } from '../../constants';
 import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Eye, EyeOff, MapPin, Printer, Compass, Maximize, Minimize, X } from 'lucide-react';
 
 interface LiveryCanvasProps {
@@ -594,7 +595,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
 
     const rect = canvas.getBoundingClientRect();
-    const scale = 1024 / rect.width;
+    const scale = CANVAS_SIZE / rect.width;
     const clickX = Math.round((e.clientX - rect.left) * scale);
     const clickY = Math.round((e.clientY - rect.top) * scale);
 
@@ -646,7 +647,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const scale = 1024 / rect.width;
+    const scale = CANVAS_SIZE / rect.width;
     const currX = Math.round((e.clientX - rect.left) * scale);
     const currY = Math.round((e.clientY - rect.top) * scale);
 
