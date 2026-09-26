@@ -65,6 +65,15 @@ The **3D Garage Customizer** embedded inside the 3D Forgery Editor provides high
 - **Fullscreen & Collapsible Controls**: Expand the 3D Customizer to full screen (`⊕` / `⊖`) or collapse/expand the panel (`▲` / `▼`).
 - **Vehicle-Specific Controls**: Car missions feature quick selectors for Infernus, Cheetah, Banshee, Comet, and Dominator, while Bike, Train, Boat, and Helicopter missions display their specific models.
 
+
+
+https://github.com/user-attachments/assets/3d24124f-e536-4f7b-9324-6d0480aeb77e
+
+
+
+
+
+
 ---
 
 ## Full Export Studio (2D, 3D & JSON Configs)
