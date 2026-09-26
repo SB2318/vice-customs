@@ -483,7 +483,7 @@ class ViceAudioEngine {
     return this.currentRadioStation;
   }
 
-  // ─── ARCADE MINI-GAME SFX ───────────────────────────────────────────────
+  //  ARCADE MINI-GAME SFX 
   public playCoinSFX() {
     if (this.isMuted) return;
     this.initCtx();

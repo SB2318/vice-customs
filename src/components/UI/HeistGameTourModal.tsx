@@ -29,7 +29,7 @@ interface TourPhase {
   visual: React.ReactNode; // Inline visual diagram
 }
 
-// ── GTA MISSION BRIEFER VISUAL DIAGRAMS ────────────────────────────────────────
+//  GTA MISSION BRIEFER VISUAL DIAGRAMS
 
 const GaragePickVisual = () => (
   <div className="relative w-full h-full flex flex-col items-center justify-center gap-3 p-4">
@@ -179,7 +179,7 @@ const GameOverVisual = () => (
   </div>
 );
 
-// ── TOUR PHASES DATA ───────────────────────────────────────────────────────────
+//  TOUR PHASES DATA 
 
 const PHASES: TourPhase[] = [
   {
@@ -294,7 +294,7 @@ const PHASES: TourPhase[] = [
   },
 ];
 
-// ── COMPONENT ─────────────────────────────────────────────────────────────────
+//  COMPONENT
 
 export const HeistGameTourModal: React.FC<HeistGameTourModalProps> = ({
   isOpen,
@@ -336,10 +336,10 @@ export const HeistGameTourModal: React.FC<HeistGameTourModalProps> = ({
           boxShadow: `0 0 0 1px ${phase.color}18, 0 40px 100px rgba(0,0,0,0.9), 0 0 80px ${phase.color}12`,
         }}
       >
-        {/* ── TOP ACCENT STRIPE ── */}
+        {/*  TOP ACCENT STRIPE  */}
         <div className="h-[3px] w-full shrink-0" style={{ background: `linear-gradient(90deg, transparent 0%, ${phase.color} 40%, ${phase.color} 60%, transparent 100%)` }} />
 
-        {/* ── PHASE BADGE + CLOSE ── */}
+        {/*  PHASE BADGE + CLOSE  */}
         <div className="flex items-center justify-between px-5 sm:px-7 pt-4 pb-3 shrink-0 border-b border-white/[0.04]">
           <div className="flex items-center gap-3">
             {/* Phase label pill */}
@@ -380,12 +380,12 @@ export const HeistGameTourModal: React.FC<HeistGameTourModalProps> = ({
           </div>
         </div>
 
-        {/* ── MAIN BODY (2-column on lg) ── */}
+        {/*  MAIN BODY (2-column on lg)  */}
         <div
           className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-5 min-h-0"
           style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.18s' }}
         >
-          {/* ── LEFT COLUMN: Briefing ── */}
+          {/*  LEFT COLUMN: Briefing  */}
           <div className="lg:col-span-3 px-5 sm:px-7 py-5 flex flex-col gap-4 border-r border-white/[0.04]">
 
             {/* Title block */}
@@ -480,7 +480,7 @@ export const HeistGameTourModal: React.FC<HeistGameTourModalProps> = ({
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN: Visual Diagram ── */}
+          {/*  RIGHT COLUMN: Visual Diagram  */}
           <div
             className="lg:col-span-2 flex flex-col"
             style={{ background: 'linear-gradient(170deg, #0a0a18 0%, #080812 100%)' }}
@@ -530,7 +530,7 @@ export const HeistGameTourModal: React.FC<HeistGameTourModalProps> = ({
           </div>
         </div>
 
-        {/* ── BOTTOM NAV ── */}
+        {/*  BOTTOM NAV  */}
         <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-t border-white/[0.04] shrink-0">
           {/* Back button */}
           <button

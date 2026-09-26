@@ -475,7 +475,7 @@ export const Toolbar2D: React.FC<Toolbar2DProps> = ({
         {/* --- TAB 4: TUNING & WEATHER STUDIO --- */}
         {activeTab === 'tuning' && (
           <div className="space-y-6">
-            {/* ── SCENE ENVIRONMENT MODE ── */}
+            {/*  SCENE ENVIRONMENT MODE  */}
             <div className="bg-[#141424] p-4 rounded-xl border border-vice-border space-y-3">
               <label className="text-xs font-vice text-white flex items-center gap-2 font-bold">
                 <span className="w-2 h-2 rounded-full bg-vice-pink shadow-neon-pink" />

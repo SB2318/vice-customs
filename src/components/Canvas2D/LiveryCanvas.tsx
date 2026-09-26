@@ -19,7 +19,6 @@ interface LiveryCanvasProps {
   onOpenExportModal?: () => void;
 }
 
-// ─── Blueprint Panel Layout (1024 × 1024 canvas) ──────────────────────────
 // Cross formation:
 //
 //           [TOP]              col: 342–682   row: 0–256
@@ -33,7 +32,7 @@ interface LiveryCanvasProps {
 //   SIDE_R: x 512-1024, y 256-580  (mirror — passenger side)
 //   FRONT:  x 300-724,  y 596-788
 //   REAR:   x 300-724,  y 808-1004
-// ─────────────────────────────────────────────────────────────────────────
+
 
 const PANELS = {
   TOP:    { x: 300, y: 20,  w: 424, h: 216, label: 'ROOF / TOP',        dir: 'N',  color: '#00f0ff' },
@@ -60,7 +59,7 @@ function resolvePanelName(x: number, y: number, _vehicle: VehicleModel): string 
   return PANELS[panel].label;
 }
 
-// ─── Draw a single car panel silhouette (car shape outline) ───────────────
+//  Draw a single car panel silhouette (car shape outline)
 function drawCarSilhouette(
   ctx: CanvasRenderingContext2D,
   px: number, py: number, pw: number, ph: number,
@@ -239,7 +238,7 @@ function drawCarSilhouette(
   ctx.restore();
 }
 
-// ─── Compass Rose ──────────────────────────────────────────────────────────
+//  Compass Rose 
 function drawCompassRose(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   ctx.save();
   ctx.translate(cx, cy);
@@ -346,7 +345,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
 
   const selectedDecal = liveryState.decals.find(d => d.id === selectedDecalId);
 
-  // ── Main Canvas Draw ───────────────────────────────────────────────────
+  //  Main Canvas Draw 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -371,7 +370,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     const pc = liveryState.primaryColor;
     const sc = liveryState.secondaryColor;
 
-    // ── Draw car silhouettes in each panel ────────────────────────────
+    //  Draw car silhouettes in each panel
     const { TOP, SIDE_L, SIDE_R, FRONT, REAR } = PANELS;
 
     // Apply paint finish overlay helper
@@ -433,7 +432,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     applyFinish(FRONT.x,  FRONT.y,  FRONT.w,  FRONT.h);
     applyFinish(REAR.x,   REAR.y,   REAR.w,   REAR.h);
 
-    // ── Unlayer image overlay ──────────────────────────────────────────
+    //  Unlayer image overlay
     if (liveryState.unlayerOverlayUrl) {
       const img = new Image();
       img.src = liveryState.unlayerOverlayUrl;
@@ -447,7 +446,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       }
     }
 
-    // ── Draw Decals ────────────────────────────────────────────────────
+    //  Draw Decals
     const sortedDecals = [...liveryState.decals].sort((a, b) => a.zIndex - b.zIndex);
     sortedDecals.forEach(decal => {
       if (!decal.visible) return;
@@ -481,7 +480,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     // Send texture to 3D scene
     if (onCanvasRender) onCanvasRender(canvas);
 
-    // ── Blueprint Panel Labels & Guides ────────────────────────────────
+    //  Blueprint Panel Labels & Guides
     if (localShowGuides) {
       ctx.save();
 
@@ -543,10 +542,10 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
       ctx.restore();
     }
 
-    // ── Compass Rose (bottom-right corner) ────────────────────────────
+    //  Compass Rose (bottom-right corner) 
     drawCompassRose(ctx, W - 54, H - 54, 42);
 
-    // ── Selection Handles ──────────────────────────────────────────────
+    //  Selection Handles
     if (selectedDecal && selectedDecal.visible) {
       ctx.save();
       ctx.translate(selectedDecal.x, selectedDecal.y);
@@ -588,7 +587,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
     drawCanvas();
   }, [drawCanvas]);
 
-  // ── Pointer Interaction ────────────────────────────────────────────────
+  //  Pointer Interaction 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -875,7 +874,7 @@ export const LiveryCanvas: React.FC<LiveryCanvasProps> = ({
   );
 };
 
-// ─── License Plate Helper ──────────────────────────────────────────────────
+//  License Plate Helper
 function drawLicensePlate(ctx: CanvasRenderingContext2D, decal: DecalLayer) {
   const plateW = 240;
   const plateH = 120;

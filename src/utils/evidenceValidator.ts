@@ -1,7 +1,7 @@
 import { HeistMission, ForgeryValidationResult, EditingMechanicType } from '../types';
 import { EDIT_DETECTION_THRESHOLD, PIXEL_CHANGE_SENSITIVITY, CANVAS_SIZE } from '../constants';
 
-// ─── Region Definitions ───────────────────────────────────────────────────────
+// Region Definitions
 // Coordinates are in the 1024×1024 SVG / canvas space.
 
 interface SamplingRegion {
@@ -42,7 +42,7 @@ const MECHANIC_REGIONS: Record<EditingMechanicType, SamplingRegion[]> = {
   ],
 };
 
-// ─── Pixel Analysis Helpers ───────────────────────────────────────────────────
+// Pixel Analysis Helpers
 
 /**
  * Draws an image source (data URL or SVG data URL) into an offscreen canvas
@@ -105,7 +105,7 @@ async function renderDataUrl(
   return ctx;
 }
 
-// ─── Per-Region Analysis ──────────────────────────────────────────────────────
+//  Per-Region Analysis  
 
 interface RegionResult {
   name: string;
@@ -130,7 +130,7 @@ async function analyzeRegions(
   });
 }
 
-// ─── Mechanic-Specific Scoring ────────────────────────────────────────────────
+//  Mechanic-Specific Scoring 
 
 function buildVehicleDisguiseResult(
   regions: RegionResult[],
@@ -384,7 +384,7 @@ function buildFinalSpeedRunResult(
   };
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// Public API
 
 /**
  * Validates the player's edited evidence image against the original SVG

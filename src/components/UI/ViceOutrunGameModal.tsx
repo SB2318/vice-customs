@@ -36,7 +36,7 @@ interface ViceHeistModalProps {
 
 type GamePhase = 'intro' | 'briefing' | 'playing' | 'busted' | 'escaped';
 
-// ── Multi-Vehicle Bespoke Story Slides ─────────────────────────────────────────
+//  Multi-Vehicle Bespoke Story Slides 
 const MISSION_STORY_SLIDES: Record<GetawayVehicleType, Array<{ eyebrow: string; headline: string; body: string; accent: string; glyph: string; }>> = {
   car: [
     {
@@ -136,7 +136,7 @@ const MISSION_STORY_SLIDES: Record<GetawayVehicleType, Array<{ eyebrow: string; 
   ]
 };
 
-// ── Bespoke Game Over Config per Vehicle Path ──────────────────────────────────
+// Bespoke Game Over Config per Vehicle Path 
 const GAME_OVER_CONFIG: Record<GetawayVehicleType, {
   headline: string;
   badge: string;
@@ -195,7 +195,7 @@ const GAME_OVER_CONFIG: Record<GetawayVehicleType, {
   }
 };
 
-// ── Power-up types ────────────────────────────────────────────────────────────
+//  Power-up types
 type PowerUpType = 'nitro' | 'repair' | 'emp';
 interface PowerUp {
   id: number;
@@ -341,7 +341,7 @@ const PoliceChaseScene: React.FC<{
         </mesh>
       ))}
 
-      {/* ── PLAYER VEHICLE MESH ── */}
+      {/*  PLAYER VEHICLE MESH  */}
       <group position={[playerX * 2.5, playerY, 2]} rotation={[0, isRamming ? 0.2 : 0, 0]}>
         {vehicleType === 'car' && (
           <Suspense fallback={null}>
@@ -673,7 +673,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
         </div>
       </div>
 
-      {/* ── PHASE 1: STORY ARC SLIDES ── */}
+      {/*  PHASE 1: STORY ARC SLIDES  */}
       {phase === 'intro' && (
         <div className="flex-1 w-full flex items-center justify-center p-4">
           <div className="relative w-full max-w-xl rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 p-6 sm:p-8 flex flex-col gap-6 shadow-2xl">
@@ -720,7 +720,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
         </div>
       )}
 
-      {/* ── PHASE 2: PRE-GAME BRIEFING ── */}
+      {/*  PHASE 2: PRE-GAME BRIEFING  */}
       {phase === 'briefing' && (
         <div className="flex-1 w-full flex items-center justify-center p-4">
           <div className="relative w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 p-6 sm:p-8 flex flex-col gap-5 shadow-2xl">
@@ -751,7 +751,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
         </div>
       )}
 
-      {/* ── PHASE 3: PLAYING 3D GETAWAY ── */}
+      {/*  PHASE 3: PLAYING 3D GETAWAY  */}
       {phase === 'playing' && (
         <div className="relative flex-1 w-full h-full flex flex-col overflow-hidden">
           {/* Top HUD Stats Bar & Vehicle-Specific Audio Theme Bar */}
@@ -982,7 +982,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
         </div>
       )}
 
-      {/* ── PHASE 4: BESPOKE GAME OVER SCREEN FOR EACH VEHICLE PATH ── */}
+      {/*  PHASE 4: BESPOKE GAME OVER SCREEN FOR EACH VEHICLE PATH  */}
       {phase === 'busted' && (
         <div className="flex-1 w-full flex items-center justify-center p-4">
           <div className="relative w-full max-w-lg rounded-2xl bg-slate-900 border border-red-500/50 p-6 sm:p-8 flex flex-col gap-5 shadow-2xl overflow-hidden">
@@ -1029,7 +1029,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
         </div>
       )}
 
-      {/* ── PHASE 5: ESCAPED SUCCESS SCREEN ── */}
+      {/*  PHASE 5: ESCAPED SUCCESS SCREEN  */}
       {phase === 'escaped' && (
         <div className="flex-1 w-full flex items-center justify-center p-4">
           <div className="relative w-full max-w-lg rounded-2xl bg-slate-900 border border-green-500/50 p-6 sm:p-8 flex flex-col gap-5 shadow-2xl overflow-hidden">

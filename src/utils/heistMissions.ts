@@ -5,7 +5,7 @@ export function createSvgDataUrl(svgString: string): string {
   return `data:image/svg+xml;charset=utf-8,${encoded}`;
 }
 
-// ── SVG Evidence Canvas Generators ──────────────────────────────────────────
+//  SVG Evidence Canvas Generators 
 
 const CAR_EVIDENCE_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
@@ -128,7 +128,7 @@ const HELICOPTER_EVIDENCE_SVG = `
 </svg>
 `;
 
-// ── 6 Interconnected Getaway Story Missions ────────────────────────────────────
+//  6 Interconnected Getaway Story Missions 
 
 export const HEIST_MISSIONS: HeistMission[] = [
   {

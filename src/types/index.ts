@@ -55,7 +55,6 @@ export interface LiveryState {
   headlightsOn: boolean;
   doorsOpen: boolean;
   hoodOpen: boolean;
-  // Tuning & Environmental Additions for 1st Prize Winner Status
   spoilerStyle: SpoilerStyle;
   rimStyle: RimStyle;
   rimColor: string;

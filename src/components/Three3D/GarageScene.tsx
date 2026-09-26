@@ -166,7 +166,7 @@ export const GarageScene: React.FC<GarageSceneProps> = ({
         </Suspense>
       </Canvas>
 
-      {/* ── RESPONSIVE 3D HUD OVERLAY ── */}
+      {/*  RESPONSIVE 3D HUD OVERLAY  */}
       <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 z-30 flex flex-col gap-1.5 pointer-events-none">
         {/* TOP ROW: TITLE BADGE + CAMERA & QUALITY CONTROLS */}
         <div className="flex items-center justify-between gap-2 w-full">

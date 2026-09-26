@@ -14,7 +14,7 @@ import {
   VEHICLE_TRANSITION_MS,
 } from '../constants';
 
-// ─── UI / Navigation Slice ────────────────────────────────────────────────────
+//  UI / Navigation Slice 
 
 interface UISlice {
   appMode: AppMode;
@@ -32,7 +32,7 @@ interface UISlice {
   triggerVehicleTransition: () => void;
 }
 
-// ─── Split Pane Slice ─────────────────────────────────────────────────────────
+//  Split Pane Slice
 
 interface SplitSlice {
   mainSplitPercent: number;
@@ -44,7 +44,7 @@ interface SplitSlice {
   setIsSplitDragging: (dragging: boolean) => void;
 }
 
-// ─── Modal Slice ──────────────────────────────────────────────────────────────
+//  Modal Slice 
 
 interface ModalSlice {
   isPresetsOpen: boolean;
@@ -67,7 +67,7 @@ interface ModalSlice {
   toggleGameTour: () => void;
 }
 
-// ─── Heist Game Slice ─────────────────────────────────────────────────────────
+//  Heist Game Slice 
 
 interface HeistSlice {
   activeHeistMission: HeistMission | null;
@@ -84,7 +84,7 @@ interface HeistSlice {
   closeEvidenceEditor: () => void;
 }
 
-// ─── Canvas Slice ─────────────────────────────────────────────────────────────
+//  Canvas Slice
 
 interface CanvasSlice {
   canvasElement: HTMLCanvasElement | null;
@@ -94,17 +94,17 @@ interface CanvasSlice {
   setSelectedDecalId: (id: string | null) => void;
 }
 
-// ─── Full Store Type ──────────────────────────────────────────────────────────
+//  Full Store Type 
 
 export type AppStore = UISlice & SplitSlice & ModalSlice & HeistSlice & CanvasSlice;
 
-// ─── Store Implementation ─────────────────────────────────────────────────────
+//  Store Implementation
 
 let vehicleTransitionTimer: ReturnType<typeof setTimeout> | null = null;
 let modeTransitionTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useAppStore = create<AppStore>((set, get) => ({
-  // ── UI / Navigation ────────────────────────────────────────────────────────
+  //  UI / Navigation 
   appMode: 'heist',
   mobileTab: '2d',
   viewMode: 'split',
@@ -136,7 +136,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
   },
 
-  // ── Split Pane ─────────────────────────────────────────────────────────────
+  //  Split Pane 
   mainSplitPercent: DEFAULT_MAIN_SPLIT_PCT,
   verticalSplitPercent: DEFAULT_VERTICAL_SPLIT_PCT,
   isSplitDragging: false,
@@ -145,7 +145,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setVerticalSplitPercent: (pct) => set({ verticalSplitPercent: pct }),
   setIsSplitDragging: (dragging) => set({ isSplitDragging: dragging }),
 
-  // ── Modals ─────────────────────────────────────────────────────────────────
+  //  Modals
   isPresetsOpen: false,
   isExportOpen: false,
   isShortcutsOpen: false,
@@ -165,7 +165,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   toggleShortcuts: () => set((s) => ({ isShortcutsOpen: !s.isShortcutsOpen })),
   toggleGameTour: () => set((s) => ({ isGameTourOpen: !s.isGameTourOpen })),
 
-  // ── Heist Game ─────────────────────────────────────────────────────────────
+  //  Heist Game
   activeHeistMission: null,
   isEvidenceEditorOpen: false,
   forgeryResult: null,
@@ -183,7 +183,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   openEvidenceEditor: () => set({ isEvidenceEditorOpen: true }),
   closeEvidenceEditor: () => set({ isEvidenceEditorOpen: false }),
 
-  // ── Canvas ─────────────────────────────────────────────────────────────────
+  //  Canvas
   canvasElement: null,
   selectedDecalId: null,
 

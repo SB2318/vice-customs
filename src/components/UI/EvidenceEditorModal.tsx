@@ -11,7 +11,7 @@ import { ExportModal } from './ExportModal';
 import { ViceRadio } from './ViceRadio';
 import { X, CheckCircle2, ShieldAlert, Send, Layers, Clock, Sparkles, AlertTriangle, Edit3, Download, Upload, Paintbrush, FileCode, Check, Car, Bike, Train, Ship, Navigation, Box, RefreshCw, Maximize2, Minimize2, ChevronUp, ChevronDown } from 'lucide-react';
 
-// ── Error Boundary so Unlayer crash never shows a blank screen ────────────────
+
 interface EBState { hasError: boolean; }
 class UnlayerErrorBoundary extends Component<{ children: React.ReactNode; fallback: React.ReactNode }, EBState> {
   constructor(props: any) { super(props); this.state = { hasError: false }; }
@@ -19,8 +19,6 @@ class UnlayerErrorBoundary extends Component<{ children: React.ReactNode; fallba
   componentDidCatch(err: Error) { console.warn('[Unlayer] Editor failed to mount:', err.message); }
   render() { return this.state.hasError ? this.props.fallback : this.props.children; }
 }
-
-// ── Fallback editor panel (shown if Unlayer fails) ────────────────────────────
 const FallbackEditorPanel: React.FC<{ photo: EvidencePhotoItem; onSubmit: () => void }> = ({ photo, onSubmit }) => (
   <div className="flex-1 w-full h-full bg-slate-950 flex flex-col items-center justify-center gap-6 p-6">
     <div className="w-full max-w-2xl flex flex-col gap-4">
@@ -84,7 +82,6 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
-  // Sub-mode tab state: 'forgery' (Unlayer evidence photo) | 'garage_studio' (3D + 2D Garage customizer)
   const [editorSubMode, setEditorSubMode] = useState<'forgery' | 'garage_studio'>('forgery');
   const [selectedDecalId, setSelectedDecalId] = useState<string | null>(null);
   const [garageCanvasElement, setGarageCanvasElement] = useState<HTMLCanvasElement | null>(null);
@@ -363,7 +360,7 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
         </div>
       </div>
 
-      {/* ── MODE 1: FORGERY EVIDENCE UNLAYER EDITOR ── */}
+      {/*  MODE 1: FORGERY EVIDENCE UNLAYER EDITOR  */}
       {editorSubMode === 'forgery' ? (
         <div className="relative flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
           
@@ -466,7 +463,7 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
               </div>
             </div>
 
-            {/* ── CAR DESIGN FRIENDLY FORGERY TOOLSET ── */}
+            {/*  CAR DESIGN FRIENDLY FORGERY TOOLSET  */}
             <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 mb-4 space-y-3">
               <span className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider block flex items-center gap-1.5">
                 <Paintbrush className="w-3.5 h-3.5 text-cyan-400" /> CAR DESIGN & FORGERY TOOLS
@@ -559,7 +556,7 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
           </div>
         </div>
       ) : (
-        /* ── MODE 2: INTEGRATED 3D GARAGE CUSTOMIZER SUITE & VEHICLE SWITCHER ── */
+        /*  MODE 2: INTEGRATED 3D GARAGE CUSTOMIZER SUITE & VEHICLE SWITCHER  */
         <div className="flex-1 w-full flex flex-col bg-slate-950 overflow-hidden min-h-0">
           {/* Vehicle Name Bar + View Mode Controls + Fullscreen/Collapse */}
           <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 flex-wrap sm:flex-nowrap">

@@ -220,7 +220,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
         )}
 
-        {/* ── TAB 1: EXPORT IMAGES & 3D ── */}
+        {/*  TAB 1: EXPORT IMAGES & 3D  */}
         {activeTab === 'images' && (
           <div className="space-y-3.5 my-2">
             <button
@@ -261,7 +261,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
         )}
 
-        {/* ── TAB 2: JSON BACKUP & LOCAL GARAGE SLOTS ── */}
+        {/* TAB 2: JSON BACKUP & LOCAL GARAGE SLOTS  */}
         {activeTab === 'json_garage' && (
           <div className="space-y-4 my-2">
             {/* JSON Export & Import Cards */}

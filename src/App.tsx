@@ -35,7 +35,7 @@ import { GripVertical, GripHorizontal, ChevronUp, ChevronDown, ChevronLeft, Chev
 type MobileTab = '2d' | '3d';
 
 export const App: React.FC = () => {
-  // ── Zustand store ──────────────────────────────────────────────────────────
+  //  Zustand store
   const {
     appMode, setAppMode,
     mobileTab, setMobileTab,
@@ -59,7 +59,7 @@ export const App: React.FC = () => {
     selectedDecalId, setSelectedDecalId,
   } = useAppStore();
 
-  // ── Livery state with undo/redo ────────────────────────────────────────────
+  //Livery state with undo/redo
   const initialLivery = (() => {
     try {
       const hash = window.location.hash;
@@ -84,7 +84,7 @@ export const App: React.FC = () => {
     canRedo,
   } = useLiveryHistory(initialLivery);
 
-  // ── Vehicle transition on vehicle change ───────────────────────────────────
+  //  Vehicle transition on vehicle change 
   const prevVehicleRef = useRef(liveryState.vehicle);
   useEffect(() => {
     if (prevVehicleRef.current !== liveryState.vehicle) {
@@ -93,7 +93,7 @@ export const App: React.FC = () => {
     }
   }, [liveryState.vehicle, triggerVehicleTransition]);
 
-  // ── Livery update helpers ──────────────────────────────────────────────────
+  //  Livery update helpers 
   const handleUpdateLiveryState = useCallback(
     (updates: Partial<LiveryState>) => {
       pushState(prev => ({ ...prev, ...updates }));
@@ -101,7 +101,7 @@ export const App: React.FC = () => {
     [pushState],
   );
 
-  // ── Global keyboard shortcuts ──────────────────────────────────────────────
+  //  Global keyboard shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -152,7 +152,7 @@ export const App: React.FC = () => {
     toggleShortcuts,
   ]);
 
-  // ── Decal operations ───────────────────────────────────────────────────────
+  //  Decal operations 
   const handleAddDecal = useCallback(
     (decalPartial: Partial<DecalLayer>) => {
       const newDecal: DecalLayer = {
@@ -216,7 +216,7 @@ export const App: React.FC = () => {
     [pushState],
   );
 
-  // ── Vehicle Heist handlers ─────────────────────────────────────────────────
+  //  Vehicle Heist handlers 
   const handleSubmitForgery = (result: ForgeryValidationResult) => {
     setForgeryResult(result);
     closeEvidenceEditor();
@@ -229,7 +229,7 @@ export const App: React.FC = () => {
     openGame(); // trigger getaway pursuit 3D game
   };
 
-  // ── Resizable split drag ───────────────────────────────────────────────────
+  //  Resizable split drag 
   const isDraggingMainSplit     = useRef(false);
   const isDraggingVerticalSplit = useRef(false);
   const mainContainerRef        = useRef<HTMLDivElement>(null);
@@ -305,14 +305,14 @@ export const App: React.FC = () => {
         key={appMode}
         className="flex-1 w-full flex flex-col min-h-0 relative overflow-hidden animate-fadeIn transition-opacity duration-300"
       >
-        {/* ── MODE 1: VEHICLE HEIST ── */}
+        {/*  MODE 1: VEHICLE HEIST  */}
         {appMode === 'heist' ? (
           <HeistMissionHub
             onSelectMission={selectHeistMission}
             onOpenTour={openGameTour}
           />
         ) : appMode === 'journey' ? (
-          /* ── MODE 2: JOURNEY STORIES ── */
+          /*  MODE 2: JOURNEY STORIES  */
           <JourneyStoryHub
             onSelectStory={(storyId, linkedMission) => {
               selectHeistMission(linkedMission);
@@ -320,7 +320,7 @@ export const App: React.FC = () => {
             onOpenTour={openGameTour}
           />
         ) : (
-          /* ── MODE 3: VICE CUSTOMS GARAGE STUDIO ── */
+          /*  MODE 3: VICE CUSTOMS GARAGE STUDIO  */
           <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden">
             {/* Garage toolbar */}
             <div className="px-3 py-1.5 bg-[#0b0b16] border-b border-vice-border flex items-center justify-between gap-2 shrink-0 overflow-x-auto scrollbar-none">
@@ -570,7 +570,7 @@ export const App: React.FC = () => {
         <ViceRadio />
       </footer>
 
-      {/* ── MODALS ── */}
+      {/* MODALS */}
 
       {activeHeistMission && (
         <EvidenceEditorModal

@@ -1,4 +1,4 @@
-// ─── Vehicle & Mode Enumerations ─────────────────────────────────────────────
+//  Vehicle & Mode Enumerations
 
 export const VEHICLE_MODELS = [
   'infernus',
@@ -28,12 +28,12 @@ export const CAMERA_PRESET_CYCLE = [
 
 export const GRAPHICS_QUALITIES = ['low', 'medium', 'high'] as const;
 
-// ─── 2D Canvas ────────────────────────────────────────────────────────────────
+// 2D Canvas
 
 /** Side length of the UV texture canvas in pixels. */
 export const CANVAS_SIZE = 1024;
 
-// ─── Resizable Split Pane ─────────────────────────────────────────────────────
+// Resizable Split Pane 
 
 /** Minimum allowed percentage for the main (horizontal) split. */
 export const SPLIT_MIN_PCT = 15;
@@ -48,14 +48,14 @@ export const DEFAULT_VERTICAL_SPLIT_PCT = 58;
 /** Percentage at which the vertical splitter snaps to "canvas only" mode. */
 export const VERTICAL_SNAP_THRESHOLD = 10;
 
-// ─── Transition Timings ───────────────────────────────────────────────────────
+//  Transition Timings 
 
 /** Duration (ms) of the vehicle-swap loading overlay. */
 export const VEHICLE_TRANSITION_MS = 600;
 /** Duration (ms) of the app-mode switch loading overlay. */
 export const MODE_TRANSITION_MS = 450;
 
-// ─── Evidence Validator ───────────────────────────────────────────────────────
+//  Evidence Validator 
 
 /**
  * Minimum fraction of sampled pixels (0–1) that must differ from the original

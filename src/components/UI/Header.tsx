@@ -74,10 +74,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full bg-[#090912]/98 backdrop-blur-xl border-b border-vice-border z-40 sticky top-0">
-      {/* ── MAIN RESPONSIVE ROW ── */}
+      {/*  MAIN RESPONSIVE ROW  */}
       <div className="flex items-center justify-between px-2.5 sm:px-4 py-2 gap-2 w-full max-w-full">
 
-        {/* ── LEFT SECTION: BRANDING & VEHICLE SELECTOR ── */}
+        {/*  LEFT SECTION: BRANDING & VEHICLE SELECTOR  */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
           {/* Logo */}
           <div className="flex items-center gap-1.5 shrink-0">
@@ -138,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* ── RIGHT GLOBAL CONTROLS ── */}
+        {/*  RIGHT GLOBAL CONTROLS  */}
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Sound Mute Toggle */}
           <button
@@ -155,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* ── MOBILE DROPDOWN MENU ── */}
+      {/*  MOBILE DROPDOWN MENU  */}
       {appMode === 'studio' && menuOpen && (
         <div className="md:hidden border-t border-vice-border bg-[#0c0c1a] px-3 py-2.5 space-y-2.5 animate-fadeIn">
           {/* View Mode */}
