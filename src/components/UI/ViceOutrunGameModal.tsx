@@ -462,13 +462,23 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
   const [nextPuId, setNextPuId] = useState(0);
   const [screenFlash, setScreenFlash] = useState<'red' | 'blue' | 'green' | null>(null);
 
-  // Refs
+  // Refs for smooth animation frame tick without re-subscribing loop
   const gameLoopRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
   const steerLeftRef = useRef(false);
   const steerRightRef = useRef(false);
   const lastTimeRef = useRef(0);
   const puSpawnTimer = useRef(0);
+
+  const nitroActiveRef = useRef(nitroActive);
+  const flaresActiveRef = useRef(flaresActive);
+  const isRammingRef = useRef(isRamming);
+  const nitroChargeRef = useRef(nitroCharge);
+
+  useEffect(() => { nitroActiveRef.current = nitroActive; }, [nitroActive]);
+  useEffect(() => { flaresActiveRef.current = flaresActive; }, [flaresActive]);
+  useEffect(() => { isRammingRef.current = isRamming; }, [isRamming]);
+  useEffect(() => { nitroChargeRef.current = nitroCharge; }, [nitroCharge]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -566,16 +576,14 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
     return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
   }, [phase]);
 
-  // Main Game Loop
+  // Main Game Loop (Optimized to avoid frame-recreation churn)
   useEffect(() => {
     if (phase !== 'playing') {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
       return;
     }
 
-    // Escape distance threshold (varies by heat level)
     const ESCAPE_TARGET = 600 + (wantedLevel * 100);
-    // HP damage per second from police (scales with heat)
     const HP_DAMAGE_PER_SEC = 3 + wantedLevel * 1.5;
 
     const tick = (ts: number) => {
@@ -583,10 +591,14 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
       const dt = Math.min((ts - lastTimeRef.current) / 1000, 0.05);
       lastTimeRef.current = ts;
 
+      const isNitroNow = nitroActiveRef.current;
+      const isFlaresNow = flaresActiveRef.current;
+      const isRammingNow = isRammingRef.current;
+      const nitroChargeNow = nitroChargeRef.current;
+
       setTimeElapsed(t => t + dt);
       setEscapeDistance(d => {
-        const next = d + dt * 45 * (nitroActive ? 2 : 1);
-        // WIN CONDITION — reached escape distance
+        const next = d + dt * 45 * (isNitroNow ? 2 : 1);
         if (next >= ESCAPE_TARGET) {
           setPhase('escaped');
           audioEngine.playNitroSFX?.();
@@ -594,17 +606,16 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
         return next;
       });
       setSpeed(s => Math.min(s + dt * 0.02, 3.5));
-      setScore(sc => sc + Math.floor(dt * 15 * wantedLevel * (nitroActive ? 2 : 1)));
+      setScore(sc => sc + Math.floor(dt * 15 * wantedLevel * (isNitroNow ? 2 : 1)));
 
       setNitroCharge(n => {
-        if (nitroActive) return Math.max(0, n - dt * 35);
+        if (isNitroNow) return Math.max(0, n - dt * 35);
         return Math.min(100, n + dt * 10);
       });
-      if (nitroActive && nitroCharge <= 0) setNitroActive(false);
+      if (isNitroNow && nitroChargeNow <= 0) setNitroActive(false);
 
-      // HP damage from police pursuit (reduced while flares/ramming active)
       setHp(h => {
-        const dmgMult = flaresActive ? 0.1 : isRamming ? 0.2 : 1;
+        const dmgMult = isFlaresNow ? 0.1 : isRammingNow ? 0.2 : 1;
         const next = h - HP_DAMAGE_PER_SEC * dt * dmgMult;
         if (next <= 0) {
           setPhase('busted');
@@ -624,7 +635,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
           if (isLeft) nx -= dt * 3.8;
           if (isRight) nx += dt * 3.8;
 
-          if (keysRef.current.has('Space') && nitroCharge > 10 && !nitroActive) {
+          if (keysRef.current.has('Space') && nitroChargeNow > 10 && !isNitroNow) {
             setNitroActive(true);
             audioEngine.playNitroSFX?.();
           }
@@ -645,7 +656,7 @@ export const ViceOutrunGameModal: React.FC<ViceHeistModalProps> = ({
 
     gameLoopRef.current = requestAnimationFrame(tick);
     return () => { if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current); };
-  }, [phase, nitroActive, nitroCharge, speed, playerX, wantedLevel, vehicleType, hp, flaresActive, isRamming]);
+  }, [phase, wantedLevel, vehicleType]);
 
   if (!isOpen) return null;
 

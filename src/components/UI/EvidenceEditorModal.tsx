@@ -158,6 +158,8 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
 
   const currentPhoto = multiPhotos[activePhotoIndex] || multiPhotos[0];
 
+  const [editedMultiImages, setEditedMultiImages] = useState<Record<string, string>>({});
+
   const handleExportJson = () => {
     audioEngine.playClickSFX();
     downloadForgeryJson({
@@ -177,6 +179,7 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
       audioEngine.playSprayPaintSFX();
       const parsed = await readForgeryJsonFile(file);
       setImportedOverlayUrl(parsed.editedDataUrl);
+      setEditedMultiImages(prev => ({ ...prev, [currentPhoto.id]: parsed.editedDataUrl }));
       setJsonNotice(`Imported forgery JSON "${file.name}"!`);
       setTimeout(() => setJsonNotice(null), 3000);
     } catch (err: any) {
@@ -186,7 +189,7 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
     }
   };
 
-  const activeImageToEdit = importedOverlayUrl || currentPhoto.svgDataUrl;
+  const activeImageToEdit = importedOverlayUrl || editedMultiImages[currentPhoto.id] || currentPhoto.svgDataUrl;
 
   const handleSaveAndSubmit = async (imageDataUrl?: string) => {
     audioEngine.playClickSFX();
@@ -194,16 +197,25 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
 
     try {
       const finalUrl = imageDataUrl || activeImageToEdit;
-      const result = await validateEvidenceForgery(mission, finalUrl);
+      const updatedMulti = {
+        ...editedMultiImages,
+        [currentPhoto.id]: finalUrl
+      };
+      setEditedMultiImages(updatedMulti);
+
+      const result = await validateEvidenceForgery(mission, finalUrl, {
+        multiImages: updatedMulti,
+        timeRemainingSec: timerRemaining
+      });
       onSubmitForgery(result);
     } catch (err) {
       console.error('Forgery validation error:', err);
       onSubmitForgery({
-        passed: true,
-        score: 92,
+        passed: false,
+        score: 0,
         mechanicType: mission.mechanicType,
-        objectivesCompleted: mission.objectives.map(o => o.id),
-        feedbackNotes: ['Forgery accepted.'],
+        objectivesCompleted: [],
+        feedbackNotes: ['[ERROR] Forgery validation failed to process the submitted image. Please check image data and try again.'],
         editedImageDataUrl: activeImageToEdit
       });
     } finally {
@@ -485,7 +497,10 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
                       key={swatch.name}
                       onClick={() => {
                         audioEngine.playSprayPaintSFX();
-                        setJsonNotice(`Chassis resprayed to ${swatch.name}! Use Unlayer to finish details.`);
+                        if (onUpdateLiveryState) {
+                          onUpdateLiveryState({ primaryColor: swatch.color });
+                        }
+                        setJsonNotice(`Chassis resprayed to ${swatch.name}! Applied to 3D vehicle & editor preview.`);
                         setTimeout(() => setJsonNotice(null), 2500);
                       }}
                       title={`Respray to ${swatch.name}`}
@@ -506,8 +521,26 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       audioEngine.playClickSFX();
-                      setJsonNotice(`Identification tag updated to "${(e.target as HTMLInputElement).value}"`);
-                      setTimeout(() => setJsonNotice(null), 2500);
+                      const val = (e.target as HTMLInputElement).value;
+                      if (val) {
+                        const existingPlate = liveryState?.decals?.find(d => d.category === 'plate');
+                        if (existingPlate) {
+                          handleUpdateDecal(existingPlate.id, { plateText: val, customText: val });
+                        } else {
+                          handleAddDecal({
+                            name: 'Plate Tag',
+                            category: 'plate',
+                            customText: val,
+                            plateText: val,
+                            x: 512,
+                            y: 740,
+                            scaleX: 1,
+                            scaleY: 1
+                          });
+                        }
+                        setJsonNotice(`Identification tag updated to "${val}"!`);
+                        setTimeout(() => setJsonNotice(null), 2500);
+                      }
                     }
                   }}
                 />

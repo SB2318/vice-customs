@@ -2,9 +2,9 @@
 
 > Built for the #BuiltWithImageEditor Challenge by Unlayer
 
-**Live Demo**: [https://automatic-bassoon.vercel.app](https://automatic-bassoon.vercel.app)
+**Live Demo**: [https://vice-customs.vercel.app](https://vice-customs.vercel.app)
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?logo=vercel&logoColor=white)](https://automatic-bassoon.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?logo=vercel&logoColor=white)](https://vice-customs.vercel.app)
 
 [![Made with React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-black?logo=three.js)](https://threejs.org)
@@ -154,8 +154,8 @@ npm -v    # should be v9+
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/SB2318/automatic-bassoon.git
-cd automatic-bassoon
+git clone https://github.com/SB2318/vice-customs.git
+cd vice-customs
 ```
 
 ### 2. Install Dependencies
@@ -183,8 +183,7 @@ npm run preview
 
 ## Deploy to Vercel
 
-1. Push code to GitHub:
-
+1. Push code to GitHub.
 2. Go to vercel.com/new and import the repository.
 3. Configure build settings:
    - Framework Preset: Vite
@@ -198,7 +197,7 @@ npm run preview
 ## Project Structure
 
 ```
-automatic-bassoon/
+vice-customs/
 ├── src/
 │   ├── App.tsx                         # Root state manager & mode switch (Vice Customs / Heist)
 │   ├── components/

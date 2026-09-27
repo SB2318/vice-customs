@@ -205,15 +205,15 @@ function buildIdentityMatrixResult(
   const overall      = Math.round((vehicleMatch + riderMatch + colorMatch) / 3);
 
   const feedbackNotes = [
-    `[MATRIX] Vehicle Match: ${vehicleMatch}%`,
+    `[MATRIX] Helmet Match: ${vehicleMatch}%`,
     `[MATRIX] Rider Match: ${riderMatch}%`,
     `[MATRIX] Color Match: ${colorMatch}%`,
   ];
 
-  const passed = overall < 20;
+  const passed = overall < 35;
   feedbackNotes.push(
     passed
-      ? `[VERIFIED] Overall identity match (${overall}%) below 20% threshold!`
+      ? `[VERIFIED] Overall identity match (${overall}%) dropped below threshold!`
       : `[ALERT] Identity match (${overall}%) still too high — more disguise needed.`,
   );
 
@@ -221,14 +221,14 @@ function buildIdentityMatrixResult(
     .filter(o => {
       if (o.category === 'color_respray'   && helmet?.edited)   return true;
       if (o.category === 'marking_remove'  && callsign?.edited) return true;
-      if (o.category === 'damage_repair'   && jacket?.edited)   return true;
+      if ((o.category === 'text_modify' || o.category === 'damage_repair') && jacket?.edited) return true;
       return false;
     })
     .map(o => o.id);
 
   return {
     passed,
-    score: 100 - overall,
+    score: Math.max(0, 100 - overall),
     mechanicType: 'identity_matrix',
     vehicleMatchPct: vehicleMatch,
     riderMatchPct: riderMatch,
@@ -246,32 +246,57 @@ function buildMultiImageResult(
   mission: HeistMission,
   multiImages?: Record<string, string>,
 ): ForgeryValidationResult {
-  // With multi-images, check consistency across cameras (simplified: header + destination)
   const destRegion   = regions.find(r => r.name === 'destination_text');
   const headerRegion = regions.find(r => r.name === 'header_bar');
+  const isPrimaryEdited = !!(destRegion?.edited || headerRegion?.edited);
 
-  const editedCameras = [destRegion?.edited, headerRegion?.edited].filter(Boolean).length;
-  const consistencyScorePct = multiImages
-    ? Math.min(100, 60 + editedCameras * 20)
-    : (destRegion?.edited ? 100 : 30);
+  // Analyze multi-image set if provided by player
+  const totalPhotos = mission.evidencePhotos?.length || 4;
+  let editedPhotoCount = isPrimaryEdited ? 1 : 0;
 
-  const passed = consistencyScorePct >= 75;
+  if (multiImages) {
+    editedPhotoCount = Object.keys(multiImages).length;
+  }
 
-  const cameraResults = [
-    { camera: 'Camera 01 - Approach',    text: destRegion?.edited   ? 'HARBOR' : 'DOWNTOWN', match: !!destRegion?.edited   },
-    { camera: 'Camera 02 - Train Front', text: destRegion?.edited   ? 'HARBOR' : 'DOWNTOWN', match: !!destRegion?.edited   },
-    { camera: 'Camera 03 - LED Board',   text: headerRegion?.edited ? 'HARBOR' : 'DOWNTOWN', match: !!headerRegion?.edited  },
-    { camera: 'Camera 04 - Platform',    text: headerRegion?.edited ? 'HARBOR' : 'DOWNTOWN', match: !!headerRegion?.edited  },
+  const consistencyScorePct = Math.min(100, Math.round((editedPhotoCount / totalPhotos) * 100));
+  const passed = consistencyScorePct >= 50 && isPrimaryEdited;
+
+  const cameraNames = [
+    'Camera 01 - Approach',
+    'Camera 02 - Train Front',
+    'Camera 03 - LED Board',
+    'Camera 04 - Platform',
   ];
+
+  const cameraResults = cameraNames.map((cam, idx) => {
+    const isEdited = multiImages
+      ? !!multiImages[mission.evidencePhotos?.[idx]?.id || `cam-0${idx + 1}`]
+      : (idx === 2 ? isPrimaryEdited : false);
+    return {
+      camera: cam,
+      text: isEdited ? 'HARBOR' : 'DOWNTOWN',
+      match: isEdited,
+    };
+  });
 
   const feedbackNotes = cameraResults.map(
     c => `[${c.match ? 'VERIFIED' : 'MISMATCH'}] ${c.camera}: ${c.text}`,
   );
   feedbackNotes.push(
     passed
-      ? 'ROUTE DATABASE CORRUPTED: Track switches rerouted train automatically!'
-      : 'ALERT: Destination text inconsistency detected across camera feeds.',
+      ? `ROUTE DATABASE CORRUPTED: ${editedPhotoCount}/${totalPhotos} feeds consistent with HARBOR route!`
+      : `ALERT: Inconsistency detected across feeds — only ${editedPhotoCount}/${totalPhotos} cameras modified.`,
   );
+
+  const objectivesCompleted: string[] = [];
+  if (isPrimaryEdited) {
+    const destObj = mission.objectives.find(o => o.id === 'obj-train-dest' || o.category === 'text_modify');
+    if (destObj) objectivesCompleted.push(destObj.id);
+  }
+  if (consistencyScorePct >= 75) {
+    const consistObj = mission.objectives.find(o => o.id === 'obj-train-consist');
+    if (consistObj) objectivesCompleted.push(consistObj.id);
+  }
 
   return {
     passed,
@@ -279,7 +304,7 @@ function buildMultiImageResult(
     mechanicType: 'multi_image_consistency',
     consistencyScorePct,
     imageConsistencyList: cameraResults,
-    objectivesCompleted: passed ? mission.objectives.map(o => o.id) : [],
+    objectivesCompleted,
     feedbackNotes,
     editedImageDataUrl: editedDataUrl,
   };
@@ -295,15 +320,33 @@ function buildEnvironmentContextResult(
   const background = regions.find(r => r.name === 'background');
 
   const editedCount = [name, reg, background].filter(r => r?.edited).length;
-  const environmentMatchPct = Math.min(100, 40 + editedCount * 20);
+  const environmentMatchPct = Math.min(100, Math.round((editedCount / 3) * 100));
   const passed = editedCount >= 2;
 
+  const objectivesCompleted: string[] = [];
   const feedbackNotes: string[] = [];
-  if (name?.edited)       feedbackNotes.push('[VERIFIED] Vessel name altered.');
-  else                    feedbackNotes.push('[WARNING] Vessel name unchanged.');
-  if (reg?.edited)        feedbackNotes.push('[VERIFIED] Registration number changed.');
-  else                    feedbackNotes.push('[WARNING] Registration still matches records.');
-  if (background?.edited) feedbackNotes.push('[VERIFIED] Marina environment context altered.');
+  if (name?.edited) {
+    feedbackNotes.push('[VERIFIED] Vessel name altered.');
+    const obj = mission.objectives.find(o => o.id === 'obj-boat-name');
+    if (obj) objectivesCompleted.push(obj.id);
+  } else {
+    feedbackNotes.push('[WARNING] Vessel name unchanged.');
+  }
+
+  if (reg?.edited) {
+    feedbackNotes.push('[VERIFIED] Registration number changed.');
+    const obj = mission.objectives.find(o => o.id === 'obj-boat-reg');
+    if (obj) objectivesCompleted.push(obj.id);
+  } else {
+    feedbackNotes.push('[WARNING] Registration still matches records.');
+  }
+
+  if (background?.edited) {
+    feedbackNotes.push('[VERIFIED] Marina environment context altered.');
+    const obj = mission.objectives.find(o => o.id === 'obj-boat-env');
+    if (obj) objectivesCompleted.push(obj.id);
+  }
+
   feedbackNotes.push(
     passed
       ? 'HARBOR CONTROL: NO MATCH FOUND for target vessel.'
@@ -315,7 +358,7 @@ function buildEnvironmentContextResult(
     score: environmentMatchPct,
     mechanicType: 'environment_context',
     environmentMatchPct,
-    objectivesCompleted: passed ? mission.objectives.map(o => o.id) : [],
+    objectivesCompleted,
     feedbackNotes,
     editedImageDataUrl: editedDataUrl,
   };
@@ -332,13 +375,25 @@ function buildRealityCheckResult(
   const callsignEdited = callsign?.edited ?? false;
   const skyEdited      = sky?.edited ?? false;
   const editedCount    = [callsignEdited, skyEdited].filter(Boolean).length;
-  const realityCheckScorePct = Math.min(100, 40 + editedCount * 30);
+  const realityCheckScorePct = Math.min(100, Math.round((editedCount / 2) * 100));
   const passed = callsignEdited; // Callsign is mandatory
 
+  const objectivesCompleted: string[] = [];
   const feedbackNotes: string[] = [];
-  if (callsignEdited) feedbackNotes.push('[VERIFIED] Tail callsign altered — identity masked.');
-  else                feedbackNotes.push('[WARNING] Tail callsign unchanged — still traceable.');
-  if (skyEdited)      feedbackNotes.push(`[REALITY CHECK ${realityCheckScorePct}%] Skyline lighting consistency verified.`);
+  if (callsignEdited) {
+    feedbackNotes.push('[VERIFIED] Tail callsign altered — identity masked.');
+    const obj = mission.objectives.find(o => o.id === 'obj-chopper-reg');
+    if (obj) objectivesCompleted.push(obj.id);
+  } else {
+    feedbackNotes.push('[WARNING] Tail callsign unchanged — still traceable.');
+  }
+
+  if (skyEdited) {
+    feedbackNotes.push(`[REALITY CHECK ${realityCheckScorePct}%] Skyline lighting consistency verified.`);
+    const obj = mission.objectives.find(o => o.id === 'obj-chopper-reality');
+    if (obj) objectivesCompleted.push(obj.id);
+  }
+
   feedbackNotes.push(
     passed
       ? 'AIRSPACE CLEARANCE APPROVED: Radar registered as medical transport.'
@@ -350,7 +405,7 @@ function buildRealityCheckResult(
     score: realityCheckScorePct,
     mechanicType: 'reality_check',
     realityCheckScorePct,
-    objectivesCompleted: passed ? mission.objectives.map(o => o.id) : [],
+    objectivesCompleted,
     feedbackNotes,
     editedImageDataUrl: editedDataUrl,
   };
@@ -367,12 +422,13 @@ function buildFinalSpeedRunResult(
   const timeBonus    = timeRemainingSec ? Math.min(20, Math.round(timeRemainingSec / 4.5)) : 0;
   const score        = Math.min(100, changePct + timeBonus);
   const passed       = score >= 35;
+  const objectivesCompleted = passed ? mission.objectives.map(o => o.id) : [];
 
   return {
     passed,
     score,
     mechanicType: 'final_speed_run',
-    objectivesCompleted: passed ? mission.objectives.map(o => o.id) : [],
+    objectivesCompleted,
     feedbackNotes: [
       'FINAL ESCAPE REPORT GENERATED:',
       `• Visual Change Index: ${changePct}%`,
