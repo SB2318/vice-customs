@@ -32,7 +32,7 @@ In **THE FORGER**, image editing directly drives the game's narrative:
 
 1. **Receive Evidence**: Intercept surveillance camera photographs and detective dossiers.
 2. **Edit Evidence**: Alter evidence photos in the Unlayer image editor (repainting car colors, obscuring license plates, modifying train destination boards from Downtown to Harbor, removing boat markings, or altering helicopter callsigns).
-3. **Forgery Validation**: The system analyzes edited image pixels against mission objectives.
+3. **Forgery Validation**: The validator renders both the original SVG and the player's edited image into offscreen canvases, then samples pixel-change fractions within mission-specific regions (license plate, car body, destination board, etc.). Objectives are completed when the relevant region shows sufficient pixel-level change — this is region-based diff analysis, not semantic image recognition.
 4. **Narrative Consequence**: The subsequent story cutscene dynamically displays the player's edited image. Detectives chase forged leads, allowing the getaway.
 
 ```
@@ -114,11 +114,11 @@ The **Full Export Studio** modal allows users to export and import design assets
 - Seamless Suite Embedding: Native tab embedding in Garage Studio and full-screen evidence forgery suite in Vehicle Heist.
 - Full-Screen Toggle: One-click expand button for uninterrupted editing.
 - Dynamic Cutscene Integration: Canvas exports render directly in subsequent story cards and map onto 3D meshes.
-- Fault-Tolerant Error Boundary: Unlayer Image Editor is wrapped in a React Error Boundary (`UnlayerErrorBoundary`) with an integrated fallback panel to guarantee non-blocking workflow and submission resilience under restrictive network environments.
+- Error Boundary: Unlayer Image Editor is wrapped in a React Error Boundary (`UnlayerErrorBoundary`) with an integrated fallback panel. If the editor fails to mount (e.g., restrictive network), the fallback allows mission submission to continue without blocking the workflow.
 - Toolset: Filters, stickers, text annotations, shape tools, cropping, and freehand drawing.
 
 ### 3D Environments & Sound Studio
-- Interactive 3D Pursuits: Real-time R3F 3D evasion game engine per vehicle type with dynamic HP damage scaling, power-ups, nitro boost, and win-condition escape distance thresholds.
+- Interactive 3D Pursuits: Lightweight arcade pursuit simulation per vehicle type — deterministic mechanics with HP decay, nitro boost, powerups, and vehicle-specific actions. Built with React Three Fiber (R3F).
 - Environments: Studio, Rain & Thunderstorm (with lightning flashes), Synthwave Sunset, and Cyberpunk Night.
 - Audio Synthesis: Procedural V8 engine rumble, blow-off valve hiss, exhaust pops, and 4 synthwave radio channels (Flash FM, Wave 103, V-Rock, Wildstyle).
 
@@ -179,7 +179,45 @@ npm run build
 npm run preview
 ```
 
+### 5. Run Tests
+
+```bash
+npm run test
+```
+
+Runs 12 unit tests across `evidenceValidator`, `shareUtils`, and `heistMissions` using Vitest.
+
 ---
+
+## Validation Architecture
+
+The forgery validator (`src/utils/evidenceValidator.ts`) uses mission-specific pixel-region analysis:
+
+```
+Original SVG                Player Edited Image
+     │                              │
+     └──── renderDataUrl() ─────────┘
+                 │
+          Offscreen Canvas (1024×1024)
+                 │
+         analyzeRegions()
+         ┌──────────────────┐
+         │ license_plate    │ ← changedPixelFraction >= threshold ?
+         │ car_body_color   │
+         │ front_bumper     │
+         └──────────────────┘
+                 │
+         buildVehicleDisguiseResult()
+                 │
+         ForgeryValidationResult
+```
+
+Each mechanic samples its own region set. **Important**: this is pixel-difference analysis, not semantic image recognition. The validator can confirm that a region changed — not what it was changed to.
+
+For the Train mission (`multi_image_consistency`), each of the 4 camera photos is independently rendered and pixel-analyzed. Consistency score = verified cameras / total cameras.
+
+---
+
 
 ## Deploy to Vercel
 

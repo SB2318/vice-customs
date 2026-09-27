@@ -5,8 +5,12 @@ import { LiveryState } from '../types';
  */
 export function encodeLiveryToUrl(state: LiveryState): string {
   try {
-    const json = JSON.stringify(state);
-    // Use encodeURIComponent to handle non-ascii chars, then btoa
+    // Strip heavy data URLs from URL hash state to prevent huge URL strings
+    const cleanState = { ...state };
+    if (cleanState.unlayerOverlayUrl && cleanState.unlayerOverlayUrl.length > 5000) {
+      delete cleanState.unlayerOverlayUrl;
+    }
+    const json = JSON.stringify(cleanState);
     const base64 = btoa(encodeURIComponent(json));
     return base64;
   } catch (err) {
@@ -22,7 +26,8 @@ export function decodeLiveryFromUrl(encoded: string): LiveryState | null {
   try {
     const json = decodeURIComponent(atob(encoded));
     const state = JSON.parse(json) as LiveryState;
-    if (state && state.vehicle && state.primaryColor) {
+    const validVehicles = ['infernus', 'cheetah', 'banshee', 'comet', 'dominator', 'dirtbike', 'train', 'boat', 'helicopter'];
+    if (state && typeof state.primaryColor === 'string' && validVehicles.includes(state.vehicle)) {
       return state;
     }
     return null;
@@ -37,7 +42,7 @@ export function decodeLiveryFromUrl(encoded: string): LiveryState | null {
  */
 export function generateShareUrl(state: LiveryState): string {
   const encoded = encodeLiveryToUrl(state);
-  const baseUrl = window.location.origin + window.location.pathname;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
   return `${baseUrl}#share=${encoded}`;
 }
 
@@ -66,10 +71,11 @@ export function readLiveryJsonFile(file: File): Promise<LiveryState> {
       try {
         const text = e.target?.result as string;
         const state = JSON.parse(text) as LiveryState;
-        if (state && state.vehicle && state.primaryColor) {
+        const validVehicles = ['infernus', 'cheetah', 'banshee', 'comet', 'dominator', 'dirtbike', 'train', 'boat', 'helicopter'];
+        if (state && typeof state.primaryColor === 'string' && validVehicles.includes(state.vehicle)) {
           resolve(state);
         } else {
-          reject(new Error('Invalid Livery JSON file structure'));
+          reject(new Error('Invalid Livery JSON file structure: unrecognized vehicle or missing color properties'));
         }
       } catch (err) {
         reject(err);

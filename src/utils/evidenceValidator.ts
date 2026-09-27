@@ -86,6 +86,15 @@ function changedPixelFraction(
 async function renderDataUrl(
   dataUrl: string,
 ): Promise<CanvasRenderingContext2D> {
+  if (typeof document === 'undefined') {
+    // Node / headless test environment fallback
+    return {
+      getImageData: (x: number, y: number, w: number, h: number) => ({
+        data: new Uint8ClampedArray(w * h * 4),
+      }),
+    } as any;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_SIZE;
   canvas.height = CANVAS_SIZE;
@@ -219,9 +228,13 @@ function buildIdentityMatrixResult(
 
   const objectivesCompleted = mission.objectives
     .filter(o => {
+      if (o.targetRegion) {
+        const targetReg = regions.find(r => r.name === o.targetRegion);
+        return !!targetReg?.edited;
+      }
       if (o.category === 'color_respray'   && helmet?.edited)   return true;
+      if (o.category === 'text_modify'     && jacket?.edited)   return true;
       if (o.category === 'marking_remove'  && callsign?.edited) return true;
-      if ((o.category === 'text_modify' || o.category === 'damage_repair') && jacket?.edited) return true;
       return false;
     })
     .map(o => o.id);
@@ -240,52 +253,60 @@ function buildIdentityMatrixResult(
   };
 }
 
-function buildMultiImageResult(
+async function buildMultiImageResult(
   regions: RegionResult[],
   editedDataUrl: string,
   mission: HeistMission,
   multiImages?: Record<string, string>,
-): ForgeryValidationResult {
-  const destRegion   = regions.find(r => r.name === 'destination_text');
-  const headerRegion = regions.find(r => r.name === 'header_bar');
-  const isPrimaryEdited = !!(destRegion?.edited || headerRegion?.edited);
-
-  // Analyze multi-image set if provided by player
-  const totalPhotos = mission.evidencePhotos?.length || 4;
-  let editedPhotoCount = isPrimaryEdited ? 1 : 0;
-
-  if (multiImages) {
-    editedPhotoCount = Object.keys(multiImages).length;
-  }
-
-  const consistencyScorePct = Math.min(100, Math.round((editedPhotoCount / totalPhotos) * 100));
-  const passed = consistencyScorePct >= 50 && isPrimaryEdited;
-
-  const cameraNames = [
-    'Camera 01 - Approach',
-    'Camera 02 - Train Front',
-    'Camera 03 - LED Board',
-    'Camera 04 - Platform',
+): Promise<ForgeryValidationResult> {
+  const photos = mission.evidencePhotos || [
+    { id: 'primary', title: mission.evidencePhotoTitle, subtitle: mission.evidencePhotoSub, svgDataUrl: mission.evidenceCanvasSvg }
   ];
+  const samplingRegions = MECHANIC_REGIONS.multi_image_consistency;
 
-  const cameraResults = cameraNames.map((cam, idx) => {
-    const isEdited = multiImages
-      ? !!multiImages[mission.evidencePhotos?.[idx]?.id || `cam-0${idx + 1}`]
-      : (idx === 2 ? isPrimaryEdited : false);
-    return {
-      camera: cam,
+  const cameraResults: Array<{ camera: string; text: string; match: boolean }> = [];
+  let verifiedCount = 0;
+
+  for (let i = 0; i < photos.length; i++) {
+    const photo = photos[i];
+    const editedUrl = multiImages?.[photo.id] || (i === 0 ? editedDataUrl : undefined);
+    let isEdited = false;
+
+    if (editedUrl) {
+      try {
+        const origCtx = await renderDataUrl(photo.svgDataUrl);
+        const editCtx = await renderDataUrl(editedUrl);
+        const analysis = await analyzeRegions(origCtx, editCtx, samplingRegions);
+        isEdited = analysis.some(r => r.edited);
+      } catch (err) {
+        console.warn(`[evidenceValidator] Failed pixel analysis for camera ${photo.id}:`, err);
+        isEdited = false;
+      }
+    }
+
+    if (isEdited) {
+      verifiedCount++;
+    }
+
+    cameraResults.push({
+      camera: photo.title || `Camera 0${i + 1}`,
       text: isEdited ? 'HARBOR' : 'DOWNTOWN',
       match: isEdited,
-    };
-  });
+    });
+  }
+
+  const totalPhotos = photos.length;
+  const consistencyScorePct = Math.min(100, Math.round((verifiedCount / totalPhotos) * 100));
+  const isPrimaryEdited = cameraResults[0]?.match || regions.some(r => r.edited);
+  const passed = consistencyScorePct >= 50 && isPrimaryEdited;
 
   const feedbackNotes = cameraResults.map(
     c => `[${c.match ? 'VERIFIED' : 'MISMATCH'}] ${c.camera}: ${c.text}`,
   );
   feedbackNotes.push(
     passed
-      ? `ROUTE DATABASE CORRUPTED: ${editedPhotoCount}/${totalPhotos} feeds consistent with HARBOR route!`
-      : `ALERT: Inconsistency detected across feeds — only ${editedPhotoCount}/${totalPhotos} cameras modified.`,
+      ? `ROUTE DATABASE CORRUPTED: ${verifiedCount}/${totalPhotos} feeds pixel-verified consistent with HARBOR route!`
+      : `ALERT: Inconsistency detected across feeds — only ${verifiedCount}/${totalPhotos} cameras modified with verified pixel edits.`,
   );
 
   const objectivesCompleted: string[] = [];
@@ -473,7 +494,7 @@ export async function validateEvidenceForgery(
         return buildIdentityMatrixResult(regionResults, editedDataUrl, mission);
 
       case 'multi_image_consistency':
-        return buildMultiImageResult(regionResults, editedDataUrl, mission, extraData?.multiImages);
+        return await buildMultiImageResult(regionResults, editedDataUrl, mission, extraData?.multiImages);
 
       case 'environment_context':
         return buildEnvironmentContextResult(regionResults, editedDataUrl, mission);

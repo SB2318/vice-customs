@@ -115,6 +115,7 @@ export interface MissionObjective {
   title: string;
   description: string;
   targetRegionLabel: string;
+  targetRegion?: string;
   completed?: boolean;
 }
 

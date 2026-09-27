@@ -149,9 +149,9 @@ export const HEIST_MISSIONS: HeistMission[] = [
     evidencePhotoSub: 'Interception Cam 047 - Downtown',
     evidenceCanvasSvg: createSvgDataUrl(CAR_EVIDENCE_SVG),
     objectives: [
-      { id: 'obj-car-color', category: 'color_respray', title: 'Respray Car Color', description: 'Paint red chassis dark black or cyan.', targetRegionLabel: 'Chassis Body' },
-      { id: 'obj-car-plate', category: 'plate_obscure', title: 'Obscure License Plate', description: 'Cover license plate text VC-4821.', targetRegionLabel: 'License Plate' },
-      { id: 'obj-car-damage', category: 'damage_repair', title: 'Remove Bumper Damage', description: 'Disguise front bumper collision scrapings.', targetRegionLabel: 'Front Bumper' }
+      { id: 'obj-car-color', category: 'color_respray', title: 'Respray Car Color', description: 'Paint red chassis dark black or cyan.', targetRegionLabel: 'Chassis Body', targetRegion: 'car_body_color' },
+      { id: 'obj-car-plate', category: 'plate_obscure', title: 'Obscure License Plate', description: 'Cover license plate text VC-4821.', targetRegionLabel: 'License Plate', targetRegion: 'license_plate' },
+      { id: 'obj-car-damage', category: 'damage_repair', title: 'Remove Bumper Damage', description: 'Disguise front bumper collision scrapings.', targetRegionLabel: 'Front Bumper', targetRegion: 'front_bumper' }
     ],
     initialNarrative: 'Detectives locked onto Security Photo #047. The red sports car is flagged across all city checkpoints.',
     successHeadline: 'CAMERA DATABASE UPDATED',
@@ -176,9 +176,9 @@ export const HEIST_MISSIONS: HeistMission[] = [
     evidencePhotoSub: 'Speed Trap 102 - Interstate',
     evidenceCanvasSvg: createSvgDataUrl(BIKE_EVIDENCE_SVG),
     objectives: [
-      { id: 'obj-bike-helmet', category: 'color_respray', title: 'Disguise Helmet', description: 'Change red helmet color to black.', targetRegionLabel: 'Rider Helmet' },
-      { id: 'obj-bike-jacket', category: 'text_modify', title: 'Cover Jacket Logo', description: 'Cover PHANTOM-99 sponsor text.', targetRegionLabel: 'Rider Jacket' },
-      { id: 'obj-bike-decal', category: 'marking_remove', title: 'Alter Bike Decals', description: 'Remove red bike racing stripes.', targetRegionLabel: 'Bike Chassis' }
+      { id: 'obj-bike-helmet', category: 'color_respray', title: 'Disguise Helmet', description: 'Change red helmet color to black.', targetRegionLabel: 'Rider Helmet', targetRegion: 'helmet' },
+      { id: 'obj-bike-jacket', category: 'text_modify', title: 'Cover Jacket Logo', description: 'Cover PHANTOM-99 sponsor text.', targetRegionLabel: 'Rider Jacket', targetRegion: 'jacket' },
+      { id: 'obj-bike-decal', category: 'marking_remove', title: 'Alter Bike Decals', description: 'Remove red bike racing stripes.', targetRegionLabel: 'Bike Chassis', targetRegion: 'callsign_text' }
     ],
     initialNarrative: 'Highway patrol locked onto your red helmet signature at toll plazas.',
     successHeadline: 'IDENTITY MATCH REDUCED TO 14%',
@@ -209,8 +209,8 @@ export const HEIST_MISSIONS: HeistMission[] = [
       { id: 'cam-04', title: 'Camera 04 - Platform', subtitle: 'Platform Sign Cam', svgDataUrl: createSvgDataUrl(TRAIN_CAM_04_SVG) }
     ],
     objectives: [
-      { id: 'obj-train-dest', category: 'text_modify', title: 'Change Destination to HARBOR', description: 'Modify DOWNTOWN to HARBOR across all camera views.', targetRegionLabel: 'Destination Board' },
-      { id: 'obj-train-consist', category: 'text_modify', title: 'Cross-Image Consistency', description: 'Ensure all 4 images report HARBOR destination.', targetRegionLabel: 'Multi-Image Set' }
+      { id: 'obj-train-dest', category: 'text_modify', title: 'Change Destination to HARBOR', description: 'Modify DOWNTOWN to HARBOR across all camera views.', targetRegionLabel: 'Destination Board', targetRegion: 'destination_text' },
+      { id: 'obj-train-consist', category: 'text_modify', title: 'Cross-Image Consistency', description: 'Ensure all 4 images report HARBOR destination.', targetRegionLabel: 'Multi-Image Set', targetRegion: 'header_bar' }
     ],
     initialNarrative: 'Police SWAT units are converging on Downtown Station based on Camera 03.',
     successHeadline: 'ROUTE DATABASE CORRUPTED',
@@ -235,9 +235,9 @@ export const HEIST_MISSIONS: HeistMission[] = [
     evidencePhotoSub: 'Harbor Channel Sweep',
     evidenceCanvasSvg: createSvgDataUrl(BOAT_EVIDENCE_SVG),
     objectives: [
-      { id: 'obj-boat-name', category: 'text_modify', title: 'Change Name to BLUE MOON', description: 'Overwrite BLACK FIN with BLUE MOON.', targetRegionLabel: 'Vessel Hull Name' },
-      { id: 'obj-boat-reg', category: 'text_modify', title: 'Update Reg to VC-913', description: 'Modify registration number VC-207 to VC-913.', targetRegionLabel: 'Registration Number' },
-      { id: 'obj-boat-env', category: 'environment_alter', title: 'Edit Marina Context', description: 'Alter harbor background lighting & water reflections.', targetRegionLabel: 'Marina Environment' }
+      { id: 'obj-boat-name', category: 'text_modify', title: 'Change Name to BLUE MOON', description: 'Overwrite BLACK FIN with BLUE MOON.', targetRegionLabel: 'Vessel Hull Name', targetRegion: 'vessel_name' },
+      { id: 'obj-boat-reg', category: 'text_modify', title: 'Update Reg to VC-913', description: 'Modify registration number VC-207 to VC-913.', targetRegionLabel: 'Registration Number', targetRegion: 'registration' },
+      { id: 'obj-boat-env', category: 'environment_alter', title: 'Edit Marina Context', description: 'Alter harbor background lighting & water reflections.', targetRegionLabel: 'Marina Environment', targetRegion: 'background' }
     ],
     initialNarrative: 'Coastguard cutters are establishing a perimeter around Marina Dock 4.',
     successHeadline: 'HARBOR CONTROL: NO MATCH FOUND',
@@ -262,8 +262,8 @@ export const HEIST_MISSIONS: HeistMission[] = [
     evidencePhotoSub: 'Skyline Perimeter',
     evidenceCanvasSvg: createSvgDataUrl(HELICOPTER_EVIDENCE_SVG),
     objectives: [
-      { id: 'obj-chopper-reg', category: 'text_modify', title: 'Modify Tail Callsign', description: 'Change tail callsign N-882VC.', targetRegionLabel: 'Tail Fin Callsign' },
-      { id: 'obj-chopper-reality', category: 'marking_remove', title: 'Preserve Skyline Consistency', description: 'Maintain realistic lighting & physical shadow consistency.', targetRegionLabel: 'Physical Lighting' }
+      { id: 'obj-chopper-reg', category: 'text_modify', title: 'Modify Tail Callsign', description: 'Change tail callsign N-882VC.', targetRegionLabel: 'Tail Fin Callsign', targetRegion: 'tail_callsign' },
+      { id: 'obj-chopper-reality', category: 'marking_remove', title: 'Preserve Skyline Consistency', description: 'Maintain realistic lighting & physical shadow consistency.', targetRegionLabel: 'Physical Lighting', targetRegion: 'sky_region' }
     ],
     initialNarrative: 'Fighter jets locked onto callsign N-882VC in metropolitan airspace.',
     successHeadline: 'AIRSPACE CLEARANCE APPROVED',
@@ -288,7 +288,7 @@ export const HEIST_MISSIONS: HeistMission[] = [
     evidencePhotoSub: 'Central Intelligence Database',
     evidenceCanvasSvg: createSvgDataUrl(CAR_EVIDENCE_SVG),
     objectives: [
-      { id: 'obj-final-rewrite', category: 'text_modify', title: 'Rewrite Connected Evidence', description: 'Alter connected vehicle evidence before 90s timer expires.', targetRegionLabel: 'Central Intelligence File' }
+      { id: 'obj-final-rewrite', category: 'text_modify', title: 'Rewrite Connected Evidence', description: 'Alter connected vehicle evidence before 90s timer expires.', targetRegionLabel: 'Central Intelligence File', targetRegion: 'full_frame' }
     ],
     initialNarrative: 'City central AI is 90 seconds away from executing a total city lockdown.',
     successHeadline: 'ESCAPE REPORT STATUS: CLEAR',

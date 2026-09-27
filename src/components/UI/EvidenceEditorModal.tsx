@@ -103,6 +103,9 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
   const [importedOverlayUrl, setImportedOverlayUrl] = useState<string | null>(null);
   const [jsonNotice, setJsonNotice] = useState<string | null>(null);
 
+  // Multi-image edited state for multi-camera missions
+  const [editedMultiImages, setEditedMultiImages] = useState<Record<string, string>>({});
+
   // Automatically sync liveryState.vehicle with mission's vehicleType on modal open
   useEffect(() => {
     if (!isOpen || !mission) return;
@@ -157,8 +160,6 @@ export const EvidenceEditorModal: React.FC<EvidenceEditorModalProps> = ({
   ];
 
   const currentPhoto = multiPhotos[activePhotoIndex] || multiPhotos[0];
-
-  const [editedMultiImages, setEditedMultiImages] = useState<Record<string, string>>({});
 
   const handleExportJson = () => {
     audioEngine.playClickSFX();

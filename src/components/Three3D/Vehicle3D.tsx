@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { LiveryState } from '../../types';
@@ -24,12 +24,15 @@ export const Vehicle3D: React.FC<Vehicle3DProps> = ({ liveryState, canvasElement
     return tex;
   }, [canvasElement]);
 
-  // Update texture every frame if canvas changes
-  useFrame(() => {
-    if (bodyTexture && canvasElement) {
+  // Update texture only when livery state or texture changes (not every frame)
+  useEffect(() => {
+    if (bodyTexture) {
       bodyTexture.needsUpdate = true;
     }
+  }, [bodyTexture, liveryState]);
 
+  // Frame animations (doors, hood)
+  useFrame(() => {
     // Smooth door & hood open/close animations
     if (leftDoorRef.current) {
       const targetAngle = liveryState.doorsOpen ? -Math.PI / 3 : 0;
