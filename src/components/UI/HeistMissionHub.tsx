@@ -45,10 +45,10 @@ export const HeistMissionHub: React.FC<HeistMissionHubProps> = ({ onSelectMissio
           
           </div>
           <h1 className="text-2xl sm:text-4xl font-black font-sans tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 uppercase">
-            VEHICLE HEIST STUDIO — DOCTOR THE EVIDENCE &amp; ESCAPE
+            VEHICLE HEIST STUDIO — FORGE THE EVIDENCE &amp; ESCAPE
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            Choose your getaway vehicle path. Use the Unlayer image editor to doctor surveillance evidence, alter identity markings, fool the police database, and execute live 3D pursuit evasion.
+            Choose your getaway vehicle path. Use the Unlayer image editor to forge surveillance evidence, alter identity markings, fool the police database, and execute live 3D pursuit evasion.
           </p>
         </div>
 

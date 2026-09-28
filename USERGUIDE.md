@@ -184,6 +184,18 @@ Play different radio stations from the bottom of the interface:
 
 ## 7. 📸 Export & Save
 
-### 🎨 Presets
+### 🎨 Presets & Exports
 
-Click **PRESE**
+* Click **PRESETS** to load pre-built livery skins such as *Outrun Sunset*, *Cyberpunk Infernus*, or *Synthwave Racer*.
+* Click **FULL EXPORT** to download 1024×1024 PNG texture maps, 3D WebGL studio snapshots, or save and load `.json` livery configurations.
+
+---
+
+## 8. 🕵️ VEHICLE HEIST Mode
+
+Switch to **VEHICLE HEIST** in the top navigation bar to play the interactive getaway forgery campaign:
+1. Select a getaway vehicle path (Car, Bike, Train, Boat, Helicopter, Final).
+2. Inspect intercepted surveillance evidence photos.
+3. Launch **THE FORGER** to alter evidence photos (respray colors, obscure license plates, update destination boards).
+4. Watch story cutscenes unfold based on your edited evidence.
+5. Evade pursuit forces in interactive 3D getaway runs!

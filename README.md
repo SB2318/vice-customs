@@ -22,7 +22,7 @@
 Users can freely toggle between two primary experiences:
 
 1. **VICE CUSTOMS (Garage Studio)**: Full-featured freeplay 3D car customization studio with WebGL rendering, paint finishes, decals, dynamic environments, procedural V8 engine sounds, and live 2D UV texture mapping powered by `@unlayer/react-image-editor`.
-2. **VEHICLE HEIST (The Forger)**: Interactive heist game where players choose a getaway vehicle path, inspect surveillance evidence, doctor photos using **THE FORGER** (powered by `@unlayer/react-image-editor`), customize 3D getaway rides in the **3D Garage Customizer**, and evade police in live 3D pursuits.
+2. **VEHICLE HEIST (The Forger)**: Interactive heist game where players choose a getaway vehicle path, inspect surveillance evidence, forge photos using **THE FORGER** (powered by `@unlayer/react-image-editor`), customize 3D getaway rides in the **3D Garage Customizer**, and evade police in live 3D pursuits.
 
 ---
 

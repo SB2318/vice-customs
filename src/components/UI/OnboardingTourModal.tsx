@@ -29,7 +29,7 @@ const STEPS: TourStep[] = [
   },
   {
     eyebrow:  'CHAPTER 02 — BESPOKE EVIDENCE FORGERY',
-    headline: 'DOCTOR THE\nSURVEILLANCE.',
+    headline: 'FORGE THE\nSURVEILLANCE.',
     body:     'Launch the Unlayer image editor to manipulate surveillance photos, alter license plates, respray chassis, and disrupt police AI scanners.',
     tip:      'Use the FULL EXPORT button to export 2D/3D PNGs and save or load JSON livery presets.',
     accent:   '#00f0ff',
